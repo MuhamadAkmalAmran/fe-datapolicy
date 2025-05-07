@@ -3,7 +3,8 @@ import { createRouter, createWebHistory } from "vue-router";
 const routes = [
   {
     path: "/apiscraping",
-    component: () => import("@/components/Scraping/APIScraping.vue")
+    home: 'apiscraping',
+    component: () => import("@/components/Pengumpulan Data/APIScraping.vue")
   },
   {
     path: "/visualization",
@@ -39,11 +40,11 @@ const routes = [
   },
   {
     path: "/webscraping",
-    component: () => import("@/components/Scraping/WebScraping.vue")
+    component: () => import("@/components/Pengumpulan Data/WebScraping.vue")
   },
   {
-    path: "/adddata",
-    component: () => import("@/components/AddData.vue")
+    path: "/manual",
+    component: () => import("@/components/Pengumpulan Data/AddData.vue")
   },
   {
     path: "/listdata",
@@ -51,7 +52,19 @@ const routes = [
   },
   {
     path: "/adddata",
-    component: () => import("@/components/AddData.vue")
+    component: () => import("@/components/Pengumpulan Data/AddData.vue")
+  },
+  {
+    path: "/generate-file",
+    component: () => import("@/components/GenerateFile.vue")
+  },
+  {
+    path: "/indeks-gini",
+    component: () => import("@/components/Form/IndeksGini.vue")
+  },
+  {
+    path: "/scraping-list",
+    component: () => import("@/components/ScrapingList.vue")
   },
 ];
 

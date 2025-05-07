@@ -1,143 +1,133 @@
 <template>
-  <div class="w-full m-2 p-6 bg-white rounded">
-    <h1 class="text-2xl font-semibold mb-4">Visualisasi Data</h1>
-    <!-- Form -->
-    <form>
-      <div class="grid gap-6 grid-cols-2 md:grid-rows-1">
-        <!-- Jenis Data -->
-        <div>
-          <label class="block text-sm">Jenis Data</label>
-          <select v-model="selectedDataType" class="select text-sm select-bordered w-full">
-            <option disabled>Pilih Data</option>
-            <option v-for="type in dataTypes" :key="type" :value="type">{{ type }}</option>
-          </select>
-        </div>
-        <!-- Wilayah -->
-        <div>
-          <label class="block text-sm">Wilayah</label>
-          <select v-model="selectedRegion" class="select text-sm select-bordered w-full">
-            <option value="">Semua Wilayah</option>
-            <option v-for="region in regions" :key="region" :value="region">
-              {{ region }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </form>
-  </div>
+  <div class="overflow-hidden w-full p-6 bg-white">
+    <!-- Loading Indicator -->
+    <div v-if="isLoading" class="fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
 
-  <!-- Charts Section -->
-  <div class="w-full m-2 rounded place-content-center">
-    <div class="grid gap-3 grid-cols-2">
-      <div class="rounded shadow p-4 bg-white">
-        <h1 class="text-2xl font-semibold">{{ chartTitle }}</h1>
-        <div class="divider mt-0"></div>
-        <BarChartComponent :chartData="chartData" :chartOptions="chartOptions" />
-      </div>
-      <div class="rounded shadow p-4 bg-white">
-        <h1 class="text-2xl font-semibold">{{ chartTitle }}</h1>
-        <div class="divider mt-0"></div>
-        <LineChartComponent :chartData="chartData" :chartOptions="chartOptions" />
+    <div class="bg-white rounded">
+      <h1 class="text-2xl font-semibold mb-6">Visualisasi Data</h1>
+      <!-- Form -->
+      <form>
+        <div class="grid gap-6 grid-cols-1 md:grid-cols-2 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+            <select v-model="selectedCategory" class="select select-bordered w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option disabled>Pilih Kategori</option>
+              <option v-for="category in categories" :key="category.id" :value="category.id">
+                {{ category.name }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah</label>
+            <select v-model="selectedCity" class="select select-bordered w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="">Semua Wilayah</option>
+              <option v-for="city in cities" :key="city" :value="city">
+                {{ city }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Charts Section -->
+    <div class="mt-6">
+      <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-semibold mb-4">{{ chartTitle }}</h2>
+          <div class="border-t border-gray-200 my-4"></div>
+          <BarChartComponent :chartData="chartData" :chartOptions="chartOptions" />
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <h2 class="text-xl font-semibold mb-4">{{ chartTitle }}</h2>
+          <div class="border-t border-gray-200 my-4"></div>
+          <LineChartComponent :chartData="chartData" :chartOptions="chartOptions" />
+        </div>
       </div>
     </div>
   </div>
-
-  <!-- Table Section -->
-  <!-- <div class="w-full m-2 rounded mt-4">
-    <div class="rounded shadow p-4 bg-white">
-      <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-semibold">Data {{ selectedDataType }}</h1>
-        <span class="text-sm text-gray-500">
-          {{ selectedRegion || 'Semua Wilayah' }}
-        </span>
-      </div>
-      <div class="divider mt-0"></div>
-      <TableComponent
-        :tableData="processedTableData"
-        :columns="tableColumns"
-      />
-      <ListData :initialData="data" @update:data="handleDataUpdate" />
-
-
-
-    </div>
-  </div> -->
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import axios from 'axios'
 import BarChartComponent from "@/components/BarChart.vue"
 import LineChartComponent from "@/components/LineChart.vue"
-// import TableComponent from '@/components/TableComponent.vue'
-import dummyData from "../data/DummyData"
-// import ListData from './ListData.vue'
-
 
 export default {
   components: {
     BarChartComponent,
-    LineChartComponent,
-    // TableComponent,
-    // ListData,
+    LineChartComponent
   },
 
   setup() {
     // Reactive state
-    const selectedDataType = ref('IPM')
-    const selectedRegion = ref('')
-    const regions = ref([
+    const selectedCategory = ref(null)
+    const selectedCity = ref('')
+    const rawData = ref([])
+    const categories = ref([])
+    const isLoading = ref(false)
+
+    // Constants
+    const cities = [
       "Kota Yogyakarta",
       "Kulon Progo",
       "Kota Bandung",
       "Kota Surabaya",
       "Banyuwangi"
-    ])
-    const dataTypes = ref(["IPM", "Stunting", "Jumlah Penduduk Miskin", "APBD"])
-    const rawData = ref(dummyData)
+    ]
 
-    // const data = ref([...dummyData])
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/categories')
+        categories.value = response.data
+        // Set default category if not set
+        if (!selectedCategory.value && categories.value.length > 0) {
+          selectedCategory.value = categories.value[0].id
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
 
-    // const handleDataUpdate = (newData) => {
-    //   data.value = newData
-    // }
+    // Fetch data
+    const fetchData = async () => {
+      isLoading.value = true
+      if (!selectedCategory.value) return
 
-    // Computed properties for table
-    const tableColumns = computed(() => [
-      { key: 'region', label: 'Wilayah' },
-      { key: 'year', label: 'Tahun' },
-      { key: 'value', label: selectedDataType.value },
-    ])
+      try {
+        const params = { category_id: selectedCategory.value }
+        if (selectedCity.value) params.city = selectedCity.value
 
-    const filteredData = computed(() => {
-      return rawData.value.filter((row) => {
-        return !selectedRegion.value || row.region === selectedRegion.value
-      })
-    })
+        const response = await axios.get('http://localhost:5000/api/data', { params })
+        rawData.value = response.data
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        rawData.value = []
+      } finally {
+        isLoading.value = false
+      }
+    }
 
-    const processedTableData = computed(() => {
-      return filteredData.value.map(row => ({
-        region: row.region,
-        year: row.year,
-        value: getDataValue(row, selectedDataType.value)
-      }))
-    })
-
+    // Computed properties
     const chartData = computed(() => {
-      const labels = [...new Set(filteredData.value.map((row) => row.year))].sort()
-      const regionsToDisplay = selectedRegion.value === ''
-        ? regions.value
-        : [selectedRegion.value]
+      const labels = [...new Set(rawData.value.map((row) => row.year))].sort()
+      const regionsToDisplay = selectedCity.value === ''
+        ? cities
+        : [selectedCity.value]
 
-      const datasets = regionsToDisplay.map((region) => {
-        const regionData = filteredData.value.filter((row) => row.region === region)
-        // Sort data by year to ensure correct line chart
-        regionData.sort((a, b) => a.year - b.year)
+      const datasets = regionsToDisplay.map((city) => {
+        const cityData = rawData.value.filter((row) => row.city === city)
+        cityData.sort((a, b) => a.year - b.year)
 
         return {
-          label: region,
-          data: regionData.map((row) => getDataValue(row, selectedDataType.value)),
-          backgroundColor: getRegionColor(region),
-          borderColor: getRegionColor(region, true),
+          label: city,
+          data: cityData.map((row) => row.amount),
+          backgroundColor: getRegionColor(city),
+          borderColor: getRegionColor(city, true),
           borderWidth: 1,
         }
       })
@@ -146,9 +136,9 @@ export default {
     })
 
     const chartTitle = computed(() => {
-      const regionText = selectedRegion.value || "Semua Wilayah"
-      const dataTypeText = selectedDataType.value || "Data"
-      return `${dataTypeText} ${regionText}`
+      const categoryName = categories.value.find(c => c.id === selectedCategory.value)?.name || 'Data'
+      const cityText = selectedCity.value || "Semua Wilayah"
+      return `${categoryName} ${cityText}`
     })
 
     const chartOptions = computed(() => ({
@@ -161,17 +151,7 @@ export default {
       },
     }))
 
-    // Methods
-    const getDataValue = (row, type) => {
-      switch (type) {
-        case "IPM": return row.ipm
-        case "Stunting": return row.stunting
-        case "Jumlah Penduduk Miskin": return row.pendudukMiskin
-        case "APBD": return row.apbd
-        default: return null
-      }
-    }
-
+    // Helper method for colors
     const getRegionColor = (region, isBorder = false) => {
       const colors = {
         "Kota Yogyakarta": "rgba(54, 162, 235, 0.6)",
@@ -185,27 +165,27 @@ export default {
       return isBorder ? color.replace("0.6", "1") : color
     }
 
-    // Watch for changes
-    watch([selectedDataType, selectedRegion], ([newDataType, newRegion]) => {
-      console.log('Data type changed:', newDataType)
-      console.log('Region changed:', newRegion)
+    // Watchers
+    watch([selectedCategory, selectedCity], () => {
+      fetchData()
+    })
+
+    // Lifecycle hooks
+    onMounted(() => {
+      fetchCategories()
     })
 
     return {
       // State
-      selectedDataType,
-      selectedRegion,
-      regions,
-      dataTypes,
+      selectedCategory,
+      selectedCity,
+      cities,
+      categories,
+      isLoading,
       // Computed
-      filteredData,
       chartData,
       chartOptions,
       chartTitle,
-      tableColumns,
-      processedTableData,
-      // data,
-      // handleDataUpdate
     }
   }
 }

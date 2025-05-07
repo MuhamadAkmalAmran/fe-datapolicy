@@ -1,153 +1,36 @@
-<template>
-  <div class="w-full p-6 bg-white rounded shadow">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-semibold">Data {{ selectedDataType }}</h1>
-      <button @click="openAddModal" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-        Tambah Data
-      </button>
-    </div>
-
-    <!-- Data Filter -->
-    <div class="grid gap-6 grid-cols-2 mb-6">
-      <div>
-        <label class="block text-sm mb-2">Jenis Data</label>
-        <select v-model="selectedDataType" class="select select-bordered w-full">
-          <option value="">Pilih Jenis Data</option>
-          <option v-for="type in dataTypes" :key="type" :value="type">
-            {{ type }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm mb-2">Wilayah</label>
-        <select v-model="selectedRegion" class="select select-bordered w-full">
-          <option value="">Semua Wilayah</option>
-          <option v-for="region in regions" :key="region" :value="region">
-            {{ region }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-        <thead class="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400">
-          <tr>
-            <th class="text-left px-4 py-2">Wilayah</th>
-            <th class="text-left px-4 py-2">Tahun</th>
-            <th class="text-left px-4 py-2">Nilai</th>
-            <th class="text-center px-4 py-2">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in filteredData" :key="`${item.region}-${item.year}`" class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-            <td class="px-4 py-2">{{ item.region }}</td>
-            <td class="px-4 py-2">{{ item.year }}</td>
-            <td class="px-4 py-2">{{ formatValue(getDataValue(item)) }}</td>
-            <td class="px-4 py-2 text-center">
-              <button @click="openEditModal(item)"
-                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-                Edit
-              </button>
-              <button @click="confirmDelete(item)"
-                class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">
-                Hapus
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Add/Edit Modal -->
-    <dialog :open="showModal" class="modal">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">
-          {{ isEditing ? 'Edit Data' : 'Tambah Data Baru' }}
-        </h3>
-        <form @submit.prevent="handleSubmit" class="space-y-4">
-          <div>
-            <label class="block text-sm mb-2">Wilayah</label>
-            <select v-model="form.region" class="select select-bordered w-full" :disabled="isEditing">
-              <option value="">Pilih Wilayah</option>
-              <option v-for="region in regions" :key="region" :value="region">
-                {{ region }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm mb-2">Tahun</label>
-            <input type="number" v-model="form.year" class="input input-bordered w-full" :disabled="isEditing"
-              min="2000" max="2024" />
-          </div>
-          <div>
-            <label class="block text-sm mb-2">Nilai</label>
-            <input type="number" v-model="form.value" class="input input-bordered w-full" step="0.01" />
-          </div>
-          <div class="modal-action">
-            <button type="submit" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
-              {{ isEditing ? 'Simpan Perubahan' : 'Tambah Data' }}
-            </button>
-            <button type="button" @click="closeModal"
-              class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
-              Batal
-            </button>
-          </div>
-        </form>
-      </div>
-    </dialog>
-
-    <!-- Delete Confirmation Modal -->
-    <dialog :open="showDeleteModal" class="modal">
-      <div class="modal-box">
-        <h3 class="font-bold text-lg mb-4">Konfirmasi Hapus</h3>
-        <p>Apakah Anda yakin ingin menghapus data ini?</p>
-        <div class="modal-action">
-          <button @click="handleDelete" class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">
-            Hapus
-          </button>
-          <button @click="showDeleteModal = false" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
-            Batal
-          </button>
-        </div>
-      </div>
-    </dialog>
-  </div>
-</template>
-
 <script>
-import { ref, computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
+import axios from 'axios'
+import { useToast } from 'vue-toastification';
+// import AddButton from './Button/AddButton.vue';
 
 export default {
-  name: 'DataManagementTable',
-
-  props: {
-    initialData: {
-      type: Array,
-      required: true
-    }
+  components: {
+    // AddButton,
   },
+  name: 'ListData',
 
-  emits: ['update:data'],
-
-  setup(props, { emit }) {
+  setup() {
     // State
-    const tableData = ref([...props.initialData])
-    const selectedDataType = ref('IPM')
-    const selectedRegion = ref('')
+    const toast = useToast();
+    const tableData = ref([])
+    const categories = ref([])
+    const selectedCategory = ref('')
+    const selectedCity = ref('')
     const showModal = ref(false)
     const showDeleteModal = ref(false)
     const isEditing = ref(false)
+    const isLoading = ref(false)
     const itemToDelete = ref(null)
     const form = ref({
-      region: '',
+      amount: 0,
       year: new Date().getFullYear(),
-      value: 0
+      city: '',
+      category_id: null
     })
 
     // Constants
-    const regions = [
+    const cities = [
       "Kota Yogyakarta",
       "Kulon Progo",
       "Kota Bandung",
@@ -155,119 +38,91 @@ export default {
       "Banyuwangi"
     ]
 
-    const dataTypes = ["IPM", "Stunting", "Jumlah Penduduk Miskin", "APBD"]
-
-    // Computed
-    const filteredData = computed(() => {
-      return tableData.value.filter(item => {
-        const regionMatch = !selectedRegion.value || item.region === selectedRegion.value
-        return regionMatch
-      })
-    })
-
-    // Methods
-    const getDataValue = (item) => {
-      switch (selectedDataType.value) {
-        case 'IPM': return item.ipm
-        case 'Stunting': return item.stunting
-        case 'Jumlah Penduduk Miskin': return item.pendudukMiskin
-        case 'APBD': return item.apbd
-        default: return null
+    // API calls
+    const fetchData = async () => {
+      isLoading.value = true
+      try {
+        const params = {}
+        if (selectedCity.value) params.city = selectedCity.value
+        if (selectedCategory.value) params.category_id = selectedCategory.value
+        const response = await axios.get('http://localhost:5000/api/data', { params })
+        tableData.value = response.data
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        toast.error('Gagal memuat data')
+      } finally {
+        isLoading.value = false
       }
     }
 
-    const formatValue = (value) => {
-      if (typeof value === 'number') {
-        return value.toLocaleString('id-ID', {
-          maximumFractionDigits: 2
-        })
+    const fetchCategories = async () => {
+      isLoading.value = true
+      try {
+        const response = await axios.get('http://localhost:5000/api/categories')
+        categories.value = response.data
+      } catch (error) {
+        console.error('Error fetching categories:', error)
       }
-      return value
+    }
+
+    // Methods
+    const handleSubmit = async () => {
+      try {
+        if (isEditing.value) {
+          await axios.put(`http://localhost:5000/api/data/${form.value.id}`, form.value)
+          toast.success('Data berhasil diperbarui')
+        } else {
+          await axios.post('http://localhost:5000/api/data', form.value)
+          toast.success('Data berhasil ditambahkan')
+        }
+        await fetchData()
+        closeModal()
+      } catch (error) {
+        console.error('Error submitting data:', error)
+        toast.error('Gagal menyimpan data')
+      }
+    }
+
+    const handleDelete = async () => {
+      if (itemToDelete.value) {
+        try {
+          await axios.delete(`http://localhost:5000/api/data/${itemToDelete.value.id}`)
+          await fetchData()
+          showDeleteModal.value = false
+          itemToDelete.value = null
+          toast.success('Data berhasil dihapus')
+        } catch (error) {
+          console.error('Error deleting data:', error)
+          toast.error('Gagal menghapus data')
+        }
+      }
     }
 
     const openAddModal = () => {
       isEditing.value = false
       form.value = {
-        region: '',
-        type: '',
+        amount: 0,
         year: new Date().getFullYear(),
-        value: 0
+        city: '',
+        category_id: null
       }
       showModal.value = true
     }
 
     const openEditModal = (item) => {
       isEditing.value = true
-      form.value = {
-        region: item.region,
-        year: item.year,
-        type: item.type,
-        value: getDataValue(item)
-      }
+      form.value = { ...item }
       showModal.value = true
     }
 
     const closeModal = () => {
       showModal.value = false
       form.value = {
-        region: '',
-        type: '',
+        amount: 0,
         year: new Date().getFullYear(),
-        value: 0
+        city: '',
+        category_id: null
       }
-    }
-
-    const handleSubmit = () => {
-      if (isEditing.value) {
-        const index = tableData.value.findIndex(
-          item => item.region === form.value.region && item.year === form.value.year
-        )
-        if (index !== -1) {
-          const updatedItem = { ...tableData.value[index] }
-          switch (selectedDataType.value) {
-            case 'IPM':
-              updatedItem.ipm = form.value.value
-              break
-            case 'Stunting':
-              updatedItem.stunting = form.value.value
-              break
-            case 'Jumlah Penduduk Miskin':
-              updatedItem.pendudukMiskin = form.value.value
-              break
-            case 'APBD':
-              updatedItem.apbd = form.value.value
-              break
-          }
-          tableData.value[index] = updatedItem
-        }
-      } else {
-        const newItem = {
-          region: form.value.region,
-          year: form.value.year,
-          ipm: 0,
-          stunting: 0,
-          pendudukMiskin: 0,
-          apbd: 0
-        }
-        switch (selectedDataType.value) {
-          case 'IPM':
-            newItem.ipm = form.value.value
-            break
-          case 'Stunting':
-            newItem.stunting = form.value.value
-            break
-          case 'Jumlah Penduduk Miskin':
-            newItem.pendudukMiskin = form.value.value
-            break
-          case 'APBD':
-            newItem.apbd = form.value.value
-            break
-        }
-        tableData.value.push(newItem)
-      }
-
-      emit('update:data', tableData.value)
-      closeModal()
     }
 
     const confirmDelete = (item) => {
@@ -275,43 +130,219 @@ export default {
       showDeleteModal.value = true
     }
 
-    const handleDelete = () => {
-      if (itemToDelete.value) {
-        tableData.value = tableData.value.filter(
-          item => !(item.region === itemToDelete.value.region &&
-            item.year === itemToDelete.value.year)
-        )
-        emit('update:data', tableData.value)
+    const getUnit = (categoryName) => {
+      switch (categoryName) {
+        case 'Indeks Pembangunan Manusia':
+        case 'Prevalensi Stunting':
+          return '%';
+        case 'Jumlah Penduduk Miskin':
+          return 'Ribu';
+        case 'APBD':
+          return 'Miliar';
+        default:
+          return '';
       }
-      showDeleteModal.value = false
-      itemToDelete.value = null
-    }
+    };
+
+    // Watchers
+    watch([selectedCity, selectedCategory], () => {
+      fetchData()
+    })
+
+    // Lifecycle hooks
+    onMounted(() => {
+      fetchCategories()
+      fetchData()
+    })
 
     return {
-      // State
       tableData,
-      selectedDataType,
-      selectedRegion,
+      categories,
+      getUnit,
+      selectedCategory,
+      selectedCity,
       showModal,
       showDeleteModal,
       isEditing,
+      isLoading,
       form,
-      regions,
-      dataTypes,
-
-      // Computed
-      filteredData,
-
-      // Methods
-      getDataValue,
-      formatValue,
+      cities,
+      handleSubmit,
+      handleDelete,
       openAddModal,
       openEditModal,
       closeModal,
-      handleSubmit,
-      confirmDelete,
-      handleDelete
+      confirmDelete
     }
   }
 }
 </script>
+
+<template>
+  <div class="w-full shadow p-10 bg-white">
+    <!-- <div v-if="isLoading" class="fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+      <div class="border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-800 dark:border-gray-700">
+        <div role="status" class="justify-items-center p-5">
+          <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600"
+            viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+              fill="currentColor" />
+            <path
+              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+              fill="currentFill" />
+          </svg>
+          <span class="text-center">Loading</span>
+        </div>
+      </div>
+    </div> -->
+    <div v-if="isLoading" class="fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+    <div class=" bg-white rounded">
+      <div class="flex flex-row justify-between mb-6">
+        <h1 class="text-2xl font-semibold">Daftar Data</h1>
+        <!-- <div class="w-30">
+          <label class=" text-sm font-medium text-gray-900 dark:text-white" for="file_input">Upload file</label>
+        <input
+          class=" w-full file-input file-input-primary text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
+          id="file_input" type="file">
+        </div> -->
+
+      </div>
+
+      <!-- Filters -->
+      <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 mb-6">
+        <div>
+          <label class="block text-sm pb-1">Kategori</label>
+          <select v-model="selectedCategory" class="select select-bordered w-full">
+            <option value="">Semua Kategori</option>
+            <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm pb-1">Wilayah</label>
+          <select v-model="selectedCity" class="select select-bordered w-full">
+            <option value="">Semua Wilayah</option>
+            <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-black">
+          <thead class="text-xs text-gray-700 font-bold uppercase bg-gray-50">
+            <tr>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                Wilayah</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                Tahun</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                Nilai</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                Kategori</th>
+              <th scope="col" class="px-6 py-3 text-left text-xs font-bold text-black uppercase tracking-wider">
+                Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="item in tableData" :key="item.id" class="hover:bg-gray-50">
+              <td class="px-6 py-4 whitespace-nowrap">{{ item.city }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ item.year }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ item.amount }} {{ getUnit(item.category?.name) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ item.category?.name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap space-x-2">
+                <button @click="openEditModal(item)" class="text-blue-600 hover:text-blue-900" title="Edit">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                    </path>
+                  </svg>
+                </button>
+                <button @click="confirmDelete(item)" class="text-red-600 hover:text-red-900" title="Hapus">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                    </path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add/Edit Modal -->
+      <dialog :open="showModal"
+        class="modal fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg mb-4">
+            {{ isEditing ? 'Edit Data' : 'Tambah Data Baru' }}
+          </h3>
+          <form @submit.prevent="handleSubmit" class="space-y-4">
+            <div>
+              <label class="block text-sm mb-2">Wilayah</label>
+              <select v-model="form.city" class="select select-bordered w-full" required>
+                <option value="" disabled>Pilih Wilayah</option>
+                <option v-for="city in cities" :key="city" :value="city">
+                  {{ city }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm mb-2">Kategori</label>
+              <select v-model="form.category_id" class="select select-bordered w-full" required>
+                <option value="" disabled>Pilih Kategori</option>
+                <option v-for="category in categories" :key="category.id" :value="category.id">
+                  {{ category.name }}
+                </option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm mb-2">Tahun</label>
+              <input type="number" v-model="form.year" class="input input-bordered w-full" required min="2000"
+                max="2024" />
+            </div>
+            <div>
+              <label class="block text-sm mb-2">Nilai</label>
+              <input type="number" v-model="form.amount" class="input input-bordered w-full" step="0.01" required />
+            </div>
+            <div class="modal-action">
+              <button type="submit"
+                class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800">
+                {{ isEditing ? 'Ubah' : 'Tambah' }}
+              </button>
+              <button type="button" @click="closeModal"
+                class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                Batal
+              </button>
+            </div>
+          </form>
+        </div>
+      </dialog>
+
+
+      <!-- Delete Confirmation Modal -->
+      <dialog :open="showDeleteModal"
+        class="modal fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
+        <div class="modal-box">
+          <h3 class="font-bold text-lg mb-4">Konfirmasi Hapus</h3>
+          <p>Apakah Anda yakin ingin menghapus data ini?</p>
+          <div class="modal-action">
+            <button @click="handleDelete"
+              class="focus:outline-none text-white bg-red-700 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900">
+              Hapus
+            </button>
+            <button @click="showDeleteModal = false"
+              class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-100 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+              Batal
+            </button>
+          </div>
+        </div>
+      </dialog>
+    </div>
+  </div>
+</template>

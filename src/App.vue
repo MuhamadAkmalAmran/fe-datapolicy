@@ -1,16 +1,16 @@
 <template>
   <div id="app" class="bg-gray-100">
+    <!-- <ToastContainer /> -->
+    <HomeLayout />
 
-
-
-    <NavBar />
+    <!-- <NavBar />
     <SideBar />
 
     <div class="p-2 sm:ml-64">
       <div class="p-3 border-gray-200 rounded-lg mt-10 min-h-screen">
         <router-view></router-view>
       </div>
-    </div>
+    </div> -->
   </div>
 
   <!-- <div class="drawer lg:drawer-open">
@@ -26,8 +26,9 @@
 </template>
 
 <script>
-import NavBar from './components/NavBar.vue';
-import SideBar from './components/SideBar.vue';
+import NavBar from './components/Navbar/NavBar.vue';
+import SideBar from './components/Sidebar/SideBar.vue';
+import HomeLayout from './layout/HomeLayout.vue';
 
 
 export default {
@@ -35,6 +36,7 @@ export default {
   components: {
     SideBar,
     NavBar,
+    HomeLayout,
   }
 };
 </script>
