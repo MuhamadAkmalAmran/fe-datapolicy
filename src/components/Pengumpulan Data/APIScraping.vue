@@ -24,11 +24,11 @@ export default {
       { value: '621', label: 'Persentase Penduduk Miskin' },
       { value: '413', label: 'Indeks Pembangunan Manusia' },
       { value: '414', label: 'Umur Harapan Hidup Saat Lahir ' },
-      { value: '333', label: 'Indeks Gini' },
-      { value: '152', label: 'Tingkat Partisipasi Angkatan Kerja' },
-      { value: '368', label: 'Jumlah Angkatan Kerja' },
+      // { value: '333', label: 'Indeks Gini' },
+      // { value: '152', label: 'Tingkat Partisipasi Angkatan Kerja' },
+      // { value: '368', label: 'Jumlah Angkatan Kerja' },
       { value: '1', label: 'PDRB Pertanian, Kehutanan, dan Perikanan', description: 'PDRB' },
-      { value: '2', label: 'PDRB Pertambangan dan Penggalian', description: 'PDRB' },
+      // { value: '2', label: 'PDRB Pertambangan dan Penggalian', description: 'PDRB' },
     ];
 
     const wilayahOptions = computed(() => {
@@ -135,17 +135,17 @@ export default {
         // Tentukan endpoint berdasarkan jenis data
         let endpoint;
         if (jenis_data.value === '333') {
-          endpoint = 'http://127.0.0.1:5000/api/indeks-gini';
+          endpoint = 'https://api.datapolicy.jogjacode.id/api/indeks-gini';
         } else if (jenis_data.value === '152') {
-          endpoint = 'http://127.0.0.1:5000/api/tingkat-partisipasi';
+          endpoint = 'https://api.datapolicy.jogjacode.id/api/tingkat-partisipasi';
         } else if (jenis_data.value === '368') {
-          endpoint = 'http://127.0.0.1:5000/api/jumlah-angkatan-bekerja';
+          endpoint = 'https://api.datapolicy.jogjacode.id/api/jumlah-angkatan-bekerja';
         }
           else if (jenis_data.value === '1') {
-            endpoint = 'http://127.0.0.1:5000/api/pdrb'
+            endpoint = 'https://api.datapolicy.jogjacode.id/api/pdrb'
           }
          else {
-          endpoint = 'http://127.0.0.1:5000/fetch_data';
+          endpoint = 'https://api.datapolicy.jogjacode.id/fetch_data';
         }
 
         const response = await axios.post(endpoint, params, {

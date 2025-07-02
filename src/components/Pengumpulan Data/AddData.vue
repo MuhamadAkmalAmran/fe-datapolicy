@@ -136,7 +136,7 @@ export default {
 
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/categories');
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories');
         categories.value = response.data;
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -147,7 +147,7 @@ export default {
     const handleSubmit = async () => {
       isLoading.value = true;
       try {
-        await axios.post('http://localhost:5000/api/data', form.value);
+        await axios.post('https://api.datapolicy.jogjacode.id/api/data', form.value);
         toast.success('Data berhasil ditambahkan');
         // Reset form
         form.value = {
@@ -171,7 +171,7 @@ export default {
       }
 
       try {
-        const response = await axios.post('http://localhost:5000/api/categories', {
+        const response = await axios.post('https://api.datapolicy.jogjacode.id/api/categories', {
           name: newCategory.value.trim()
         });
         categories.value.push(response.data);

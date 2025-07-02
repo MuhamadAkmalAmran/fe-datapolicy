@@ -56,7 +56,7 @@
                   v-model="form.category_id"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
-                  @change="loadCategoryFields"
+
                 >
                   <option disabled value="">Pilih Kategori</option>
                   <option v-for="category in categories" :key="category.id" :value="category.id">
@@ -373,7 +373,7 @@ const cities = [
 
 const fetchCategories = async () => {
   try {
-    const response = await fetch('http://localhost:5000/api/categories');
+    const response = await fetch('https://api.datapolicy.jogjacode.id/api/categories');
     const data = await response.json();
     categories.value = data;
   } catch (err) {
@@ -390,7 +390,7 @@ const loadCategoryFields = async () => {
 
   isLoading.value = true;
   try {
-    const response = await fetch(`http://localhost:5000/api/categories/${form.category_id}/fields`);
+    const response = await fetch(`https://api.datapolicy.jogjacode.id/api/categories/${form.category_id}/fields`);
     if (!response.ok) throw new Error('Gagal memuat kolom kategori');
 
     const data = await response.json();
@@ -421,7 +421,7 @@ const handleManualSubmit = async () => {
       fields: form.fields
     };
 
-    const response = await fetch('http://localhost:5000/api/data', {
+    const response = await fetch('https://api.datapolicy.jogjacode.id/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(formData)
@@ -469,7 +469,7 @@ const handleFileUpload = async (event) => {
       }
     }, 300);
 
-    const response = await fetch('http://localhost:5000/api/upload', {
+    const response = await fetch('https://api.datapolicy.jogjacode.id/api/upload', {
       method: 'POST',
       body: formData
     });
@@ -519,7 +519,7 @@ const downloadTemplate = async () => {
       params.append('year_end', templateForm.yearEnd);
     }
 
-    const response = await fetch(`http://localhost:5000/api/export-template?${params.toString()}`);
+    const response = await fetch(`https://api.datapolicy.jogjacode.id/api/export-template?${params.toString()}`);
 
     if (!response.ok) {
       const errorData = await response.json();

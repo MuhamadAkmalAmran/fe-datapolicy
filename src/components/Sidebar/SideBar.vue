@@ -24,18 +24,18 @@
               <router-link to="/apiscraping"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">API</router-link>
             </li>
-            <li>
+            <!-- <li>
               <router-link to="/webscraping"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Web</router-link>
-            </li>
+            </li> -->
             <li>
               <router-link to="/manual"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Tambah Data</router-link>
             </li>
-            <li>
+            <!-- <li>
               <router-link to="/generate-file"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Upload file</router-link>
-            </li>
+            </li> -->
             <!-- <li>
               <router-link to="/scraping-list"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Scraping List</router-link>
@@ -93,14 +93,14 @@
               <router-link to="/prediksi"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100">Prediksi</router-link>
             </li> -->
-            <li>
+            <!-- <li>
               <router-link to="/analisisklasifikasi"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Klasifikasi</router-link>
             </li>
             <li>
               <router-link to="/analisisklasterisasi"
                 class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 ">Klasterisasi</router-link>
-            </li>
+            </li> -->
           </ul>
         </li>
       </ul>

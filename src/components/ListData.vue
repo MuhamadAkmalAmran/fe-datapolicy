@@ -45,7 +45,7 @@ export default {
         const params = {}
         if (selectedCity.value) params.city = selectedCity.value
         if (selectedCategory.value) params.category_id = selectedCategory.value
-        const response = await axios.get('http://localhost:5000/api/data', { params })
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/data', { params })
         tableData.value = response.data
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -58,7 +58,7 @@ export default {
     const fetchCategories = async () => {
       isLoading.value = true
       try {
-        const response = await axios.get('http://localhost:5000/api/categories')
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories')
         categories.value = response.data
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -71,10 +71,10 @@ export default {
     const handleSubmit = async () => {
       try {
         if (isEditing.value) {
-          await axios.put(`http://localhost:5000/api/data/${form.value.id}`, form.value)
+          await axios.put(`https://api.datapolicy.jogjacode.id/api/data/${form.value.id}`, form.value)
           toast.success('Data berhasil diperbarui')
         } else {
-          await axios.post('http://localhost:5000/api/data', form.value)
+          await axios.post('https://api.datapolicy.jogjacode.id/api/data', form.value)
           toast.success('Data berhasil ditambahkan')
         }
         await fetchData()
@@ -88,7 +88,7 @@ export default {
     const handleDelete = async () => {
       if (itemToDelete.value) {
         try {
-          await axios.delete(`http://localhost:5000/api/data/${itemToDelete.value.id}`)
+          await axios.delete(`https://api.datapolicy.jogjacode.id/api/data/${itemToDelete.value.id}`)
           await fetchData()
           showDeleteModal.value = false
           itemToDelete.value = null

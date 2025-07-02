@@ -115,7 +115,7 @@ export default {
 
       isLoading.value = true;
       try {
-        const response = await axios.post('http://127.0.0.1:5000/stunting', {
+        const response = await axios.post('https://api.datapolicy.jogjacode.id/stunting', {
           kab_kota: formData.kab_kota,
           year: formData.year
         });

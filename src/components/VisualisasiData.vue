@@ -82,7 +82,7 @@ export default {
     // Fetch categories
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/categories')
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories')
         categories.value = response.data
         // Set default category if not set
         if (!selectedCategory.value && categories.value.length > 0) {
@@ -102,7 +102,7 @@ export default {
         const params = { category_id: selectedCategory.value }
         if (selectedCity.value) params.city = selectedCity.value
 
-        const response = await axios.get('http://localhost:5000/api/data', { params })
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/data', { params })
         rawData.value = response.data
       } catch (error) {
         console.error('Error fetching data:', error)
