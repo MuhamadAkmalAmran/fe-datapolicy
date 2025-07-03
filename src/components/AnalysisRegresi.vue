@@ -274,7 +274,7 @@ export default {
     // Methods
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('https://api.datapolicy.jogjacode.id/categories')
+        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories')
         categories.value = response.data
       } catch (error) {
         console.error('Error fetching categories:', error)
@@ -300,7 +300,7 @@ export default {
           payload.variables = selectedMultiVars.value;
         }
 
-        const response = await axios.post("http://localhost:5000/analysis", payload);
+        const response = await axios.post("https://api.datapolicy.jogjacode.id/analysis", payload);
         console.log("API Response:", response.data); // Debugging
         analysisResults.value = response.data;
 

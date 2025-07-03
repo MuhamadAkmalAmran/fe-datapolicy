@@ -131,7 +131,7 @@ export default {
           payload.independent_value = parseFloat(independentValue.value)
         }
 
-        const response = await axios.post('http://localhost:5000/predict', payload)
+        const response = await axios.post('https://api.datapolicy.jogjacode.id/predict', payload)
         predictionResults.value = response.data
       } catch (error) {
         console.error('Prediction error:', error)

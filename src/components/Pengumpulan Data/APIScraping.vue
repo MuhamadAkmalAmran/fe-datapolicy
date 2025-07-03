@@ -26,8 +26,8 @@ export default {
       { value: '414', label: 'Umur Harapan Hidup Saat Lahir ' },
       // { value: '333', label: 'Indeks Gini' },
       // { value: '152', label: 'Tingkat Partisipasi Angkatan Kerja' },
-      // { value: '368', label: 'Jumlah Angkatan Kerja' },
-      { value: '1', label: 'PDRB Pertanian, Kehutanan, dan Perikanan', description: 'PDRB' },
+      { value: '368', label: 'Jumlah Angkatan Kerja' },
+      // { value: '1', label: 'PDRB Pertanian, Kehutanan, dan Perikanan', description: 'PDRB' },
       // { value: '2', label: 'PDRB Pertambangan dan Penggalian', description: 'PDRB' },
     ];
 
@@ -80,7 +80,7 @@ export default {
           { value: '2024', label: '2024' },
         ]
       }
-      else if (jenis_data.value === '333' || jenis_data.value === '368' || jenis_data.value === '1') {
+      else if (jenis_data.value === '333'|| jenis_data.value === '1') {
         return [
           { value: '2020', label: '2020' },
           { value: '2021', label: '2021' },
