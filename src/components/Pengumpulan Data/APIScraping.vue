@@ -26,7 +26,7 @@ export default {
       { value: '414', label: 'Umur Harapan Hidup Saat Lahir ' },
       // { value: '333', label: 'Indeks Gini' },
       // { value: '152', label: 'Tingkat Partisipasi Angkatan Kerja' },
-      { value: '368', label: 'Jumlah Angkatan Kerja' },
+      // { value: '368', label: 'Jumlah Angkatan Kerja' },
       // { value: '1', label: 'PDRB Pertanian, Kehutanan, dan Perikanan', description: 'PDRB' },
       // { value: '2', label: 'PDRB Pertambangan dan Penggalian', description: 'PDRB' },
     ];
