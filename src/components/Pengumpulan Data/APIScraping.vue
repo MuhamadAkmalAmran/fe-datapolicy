@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
 import axios from 'axios';
+import api from '@/api/api';
 // import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline';
 
 export default {
@@ -135,20 +136,20 @@ export default {
         // Tentukan endpoint berdasarkan jenis data
         let endpoint;
         if (jenis_data.value === '333') {
-          endpoint = 'https://api.datapolicy.jogjacode.id/api/indeks-gini';
+          endpoint = '/indeks-gini';
         } else if (jenis_data.value === '152') {
-          endpoint = 'https://api.datapolicy.jogjacode.id/api/tingkat-partisipasi';
+          endpoint = '/tingkat-partisipasi';
         } else if (jenis_data.value === '368') {
-          endpoint = 'https://api.datapolicy.jogjacode.id/api/jumlah-angkatan-bekerja';
+          endpoint = '/jumlah-angkatan-bekerja';
         }
           else if (jenis_data.value === '1') {
-            endpoint = 'https://api.datapolicy.jogjacode.id/api/pdrb'
+            endpoint = '/pdrb'
           }
          else {
-          endpoint = 'https://api.datapolicy.jogjacode.id/fetch_data';
+          endpoint = '/fetch_data';
         }
 
-        const response = await axios.post(endpoint, params, {
+        const response = await api.post(endpoint, params, {
           headers: {
             'Content-Type': 'application/json'
           }

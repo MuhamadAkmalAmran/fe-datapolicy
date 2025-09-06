@@ -107,6 +107,7 @@ import AddButton from '../Button/AddButton.vue';
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import api from '@/api/api';
 
 export default {
   components: {
@@ -136,7 +137,7 @@ export default {
 
     const fetchCategories = async () => {
       try {
-        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories');
+        const response = await api.get('/categories');
         categories.value = response.data;
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -147,7 +148,7 @@ export default {
     const handleSubmit = async () => {
       isLoading.value = true;
       try {
-        await axios.post('https://api.datapolicy.jogjacode.id/api/data', form.value);
+        await api.post('/data', form.value);
         toast.success('Data berhasil ditambahkan');
         // Reset form
         form.value = {
@@ -171,7 +172,7 @@ export default {
       }
 
       try {
-        const response = await axios.post('https://api.datapolicy.jogjacode.id/api/categories', {
+        const response = await api.post('/categories', {
           name: newCategory.value.trim()
         });
         categories.value.push(response.data);

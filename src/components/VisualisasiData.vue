@@ -1,192 +1,239 @@
 <template>
   <div class="overflow-hidden w-full p-6 bg-white">
-    <!-- Loading Indicator -->
+    <!-- Loading Overlay -->
     <div v-if="isLoading" class="fixed inset-0 z-50 bg-gray-500 bg-opacity-50 flex items-center justify-center">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
     </div>
 
     <div class="bg-white rounded">
       <h1 class="text-2xl font-semibold mb-6">Visualisasi Data</h1>
-      <!-- Form -->
-      <form>
-        <div class="grid gap-6 grid-cols-1 md:grid-cols-2 mb-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
-            <select v-model="selectedCategory" class="select select-bordered w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option disabled>Pilih Kategori</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
+
+      <!-- Filters -->
+      <form class="grid gap-6 grid-cols-1 md:grid-cols-2 mb-6">
+        <!-- Kategori dengan Search -->
+        <div class="relative" ref="categoryDropdownRef">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+          <div class="relative">
+            <input type="text" v-model="filters.categorySearch" @focus="openCategoryDropdown"
+              placeholder="Pilih Kategori"
+              class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500" />
+            <!-- Clear button -->
+            <button v-if="filters.categorySearch && filters.selectedCategory" type="button" @click="clearCategory"
+              class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              ✕
+            </button>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah</label>
-            <select v-model="selectedCity" class="select select-bordered w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="">Semua Wilayah</option>
-              <option v-for="city in cities" :key="city" :value="city">
-                {{ city }}
-              </option>
-            </select>
+
+          <!-- Category Dropdown -->
+          <div v-if="categoryDropdown.open"
+            class="absolute w-full bg-white border border-gray-300 mt-1 max-h-72 overflow-y-auto rounded-md shadow-lg z-10">
+            <div v-for="category in categoryDropdown.filtered" :key="category.id" @click="selectCategory(category)"
+              class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm"
+              :class="{ 'bg-blue-50': filters.selectedCategory === category.id }">
+              {{ category.name }}
+            </div>
+            <div v-if="categoryDropdown.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+              Tidak ada kategori ditemukan
+            </div>
           </div>
+        </div>
+
+        <!-- Wilayah -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah</label>
+          <select v-model="filters.selectedCity"
+            class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Semua Wilayah</option>
+            <option v-for="city in cities" :key="city" :value="city">
+              {{ city }}
+            </option>
+          </select>
         </div>
       </form>
     </div>
 
-    <!-- Charts Section -->
-    <div class="mt-6">
-      <div class="grid gap-6 grid-cols-1 md:grid-cols-2">
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ chartTitle }}</h2>
-          <div class="border-t border-gray-200 my-4"></div>
-          <BarChartComponent :chartData="chartData" :chartOptions="chartOptions" />
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-6">
-          <h2 class="text-xl font-semibold mb-4">{{ chartTitle }}</h2>
-          <div class="border-t border-gray-200 my-4"></div>
-          <LineChartComponent :chartData="chartData" :chartOptions="chartOptions" />
-        </div>
-      </div>
+    <!-- Charts -->
+    <div class="mt-6 grid gap-6 grid-cols-1 md:grid-cols-2">
+      <ChartCard :title="chartTitle">
+        <BarChartComponent :chartData="chartData" :chartOptions="chartOptions" />
+      </ChartCard>
+      <ChartCard :title="chartTitle">
+        <LineChartComponent :chartData="chartData" :chartOptions="chartOptions" />
+      </ChartCard>
     </div>
   </div>
 </template>
 
-<script>
-import { ref, computed, watch, onMounted } from 'vue'
-import axios from 'axios'
-import BarChartComponent from "@/components/BarChart.vue"
-import LineChartComponent from "@/components/LineChart.vue"
+<script setup>
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { getCategories, getData } from "@/api/api";
+import { CITIES, REGION_COLORS } from "@/constants/index";
+import BarChartComponent from "@/components/BarChart.vue";
+import LineChartComponent from "@/components/LineChart.vue";
+import ChartCard from "@/components/ChartCard.vue";
 
-export default {
-  components: {
-    BarChartComponent,
-    LineChartComponent
-  },
+// State
+const isLoading = ref(false);
+const categoryDropdownRef = ref(null);
 
-  setup() {
-    // Reactive state
-    const selectedCategory = ref(null)
-    const selectedCity = ref('')
-    const rawData = ref([])
-    const categories = ref([])
-    const isLoading = ref(false)
+// Data
+const rawData = ref([]);
+const categories = ref([]);
 
-    // Constants
-    const cities = [
-      "Kota Yogyakarta",
-      "Kulon Progo",
-      "Kota Bandung",
-      "Kota Surabaya",
-      "Banyuwangi"
-    ]
+// Filters
+const filters = ref({
+  selectedCategory: null,
+  selectedCity: '',
+  categorySearch: ''
+});
 
-    // Fetch categories
-    const fetchCategories = async () => {
-      try {
-        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/categories')
-        categories.value = response.data
-        // Set default category if not set
-        if (!selectedCategory.value && categories.value.length > 0) {
-          selectedCategory.value = categories.value[0].id
-        }
-      } catch (error) {
-        console.error('Error fetching categories:', error)
-      }
-    }
+// Category Dropdown
+const categoryDropdown = ref({
+  open: false,
+  filtered: []
+});
 
-    // Fetch data
-    const fetchData = async () => {
-      isLoading.value = true
-      if (!selectedCategory.value) return
+// Constants
+const cities = CITIES;
 
-      try {
-        const params = { category_id: selectedCategory.value }
-        if (selectedCity.value) params.city = selectedCity.value
+// Computed
+const filteredCategories = computed(() => {
+  if (!filters.value.categorySearch) {
+    return categories.value;
+  }
+  const term = filters.value.categorySearch.toLowerCase();
+  return categories.value.filter(cat =>
+    cat.name.toLowerCase().includes(term)
+  );
+});
 
-        const response = await axios.get('https://api.datapolicy.jogjacode.id/api/data', { params })
-        rawData.value = response.data
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        rawData.value = []
-      } finally {
-        isLoading.value = false
-      }
-    }
+const chartTitle = computed(() => {
+  const categoryName = categories.value.find(c => c.id === filters.value.selectedCategory)?.name || 'Data';
+  const cityText = filters.value.selectedCity || "Semua Wilayah";
+  return `${categoryName} di ${cityText}`;
+});
 
-    // Computed properties
-    const chartData = computed(() => {
-      const labels = [...new Set(rawData.value.map((row) => row.year))].sort()
-      const regionsToDisplay = selectedCity.value === ''
-        ? cities
-        : [selectedCity.value]
+const chartData = computed(() => {
+  const labels = [...new Set(rawData.value.map(row => row.year))].sort();
+  const regionsToDisplay = filters.value.selectedCity ? [filters.value.selectedCity] : cities;
 
-      const datasets = regionsToDisplay.map((city) => {
-        const cityData = rawData.value.filter((row) => row.city === city)
-        cityData.sort((a, b) => a.year - b.year)
+  const datasets = regionsToDisplay.map(city => {
+    const cityData = rawData.value
+      .filter(row => row.city === city)
+      .sort((a, b) => a.year - b.year);
 
-        return {
-          label: city,
-          data: cityData.map((row) => row.amount),
-          backgroundColor: getRegionColor(city),
-          borderColor: getRegionColor(city, true),
-          borderWidth: 1,
-        }
-      })
-
-      return { labels, datasets }
-    })
-
-    const chartTitle = computed(() => {
-      const categoryName = categories.value.find(c => c.id === selectedCategory.value)?.name || 'Data'
-      const cityText = selectedCity.value || "Semua Wilayah"
-      return `${categoryName} ${cityText}`
-    })
-
-    const chartOptions = computed(() => ({
-      responsive: true,
-      plugins: {
-        legend: {
-          display: true,
-          position: "top",
-        },
-      },
-    }))
-
-    // Helper method for colors
-    const getRegionColor = (region, isBorder = false) => {
-      const colors = {
-        "Kota Yogyakarta": "rgba(54, 162, 235, 0.6)",
-        "Kulon Progo": "rgba(255, 99, 132, 0.6)",
-        "Kota Bandung": "rgba(75, 192, 192, 0.6)",
-        "Kota Surabaya": "rgba(255, 0, 0, 0.6)",
-        "Banyuwangi": "rgba(0, 0, 255, 0.6)",
-      }
-
-      const color = colors[region] || "rgba(201, 203, 207, 0.6)"
-      return isBorder ? color.replace("0.6", "1") : color
-    }
-
-    // Watchers
-    watch([selectedCategory, selectedCity], () => {
-      fetchData()
-    })
-
-    // Lifecycle hooks
-    onMounted(() => {
-      fetchCategories()
-    })
+    const color = getRegionColor(city);
 
     return {
-      // State
-      selectedCategory,
-      selectedCity,
-      cities,
-      categories,
-      isLoading,
-      // Computed
-      chartData,
-      chartOptions,
-      chartTitle,
+      label: city,
+      data: labels.map(year => cityData.find(d => d.year === year)?.amount ?? null),
+      backgroundColor: color,
+      borderColor: color.replace("0.6", "1"),
+      borderWidth: 1,
+    };
+  });
+
+  return { labels, datasets };
+});
+
+const chartOptions = computed(() => ({
+  responsive: true,
+  plugins: {
+    legend: {
+      display: true,
+      position: "top",
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true
     }
   }
-}
+}));
+
+// Methods
+const fetchCategories = async () => {
+  try {
+    const response = await getCategories();
+    categories.value = response.data;
+    categoryDropdown.value.filtered = response.data;
+
+    // Auto select first category if none selected
+    if (!filters.value.selectedCategory && categories.value.length > 0) {
+      const firstCategory = categories.value[0];
+      selectCategory(firstCategory);
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+  }
+};
+
+const fetchData = async () => {
+  if (!filters.value.selectedCategory) return;
+
+  isLoading.value = true;
+  try {
+    const params = { category_id: filters.value.selectedCategory };
+    if (filters.value.selectedCity) {
+      params.city = filters.value.selectedCity;
+    }
+
+    const response = await getData(params);
+    rawData.value = response.data;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    rawData.value = [];
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const filterCategories = () => {
+  categoryDropdown.value.filtered = filteredCategories.value;
+};
+
+const selectCategory = (category) => {
+  filters.value.selectedCategory = category.id;
+  filters.value.categorySearch = category.name;
+  closeCategoryDropdown();
+};
+
+const clearCategory = () => {
+  filters.value.selectedCategory = null;
+  filters.value.categorySearch = '';
+  categoryDropdown.value.filtered = categories.value;
+};
+
+const openCategoryDropdown = () => {
+  categoryDropdown.value.open = true;
+  filterCategories();
+};
+
+const closeCategoryDropdown = () => {
+  categoryDropdown.value.open = false;
+};
+
+const handleClickOutside = (event) => {
+  if (categoryDropdownRef.value && !categoryDropdownRef.value.contains(event.target)) {
+    closeCategoryDropdown();
+  }
+};
+
+const getRegionColor = (region) => {
+  return REGION_COLORS[region] || REGION_COLORS.default;
+};
+
+// Watchers
+watch([() => filters.value.selectedCategory, () => filters.value.selectedCity], fetchData);
+watch(() => filters.value.categorySearch, filterCategories);
+
+// Lifecycle
+onMounted(() => {
+  fetchCategories();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>

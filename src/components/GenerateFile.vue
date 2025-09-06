@@ -1,333 +1,181 @@
 <template>
-  <div class="max-w-4xl mx-auto p-6">
-    <div class="bg-white rounded-lg shadow">
-      <div class="p-6">
-        <h2 class="text-2xl font-semibold mb-2">Pengelolaan Data</h2>
-        <p class="text-gray-600 mb-6">
-          Pilih metode untuk menambahkan data baru ke sistem
-        </p>
+  <div class="w-full mx-auto p-4">
+    <div class="card p-10 md:p-8 shadow-lg bg-white rounded-lg">
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Pengelolaan Data</h1>
+      </div>
 
-        <!-- Tabs -->
-        <div class="w-full">
-          <div class="grid w-full grid-cols-2 mb-6 bg-gray-100 p-1 rounded-lg">
-            <button
-              @click="activeTab = 'manual'"
-              :class="[
-                'flex items-center justify-center gap-2 p-2 rounded-md transition-colors',
-                activeTab === 'manual' ? 'bg-white shadow' : 'hover:bg-gray-200'
-              ]"
-            >
-              <i class="i-lucide-file-plus w-4 h-4"></i>
-              Input Manual
-            </button>
-            <button
-              @click="activeTab = 'import'"
-              :class="[
-                'flex items-center justify-center gap-2 p-2 rounded-md transition-colors',
-                activeTab === 'import' ? 'bg-white shadow' : 'hover:bg-gray-200'
-              ]"
-            >
-              <i class="i-lucide-upload w-4 h-4"></i>
-              Import CSV
-            </button>
+      <p class="text-gray-600 mb-6">
+        Pilih metode untuk menambahkan data baru ke sistem. Anda dapat mengisi form secara manual atau mengimpor dari
+        file Excel.
+      </p>
+
+      <!-- Tab Navigation -->
+      <div class="w-full">
+        <div class="grid w-full grid-cols-2 mb-6 bg-gray-100 p-1 rounded-lg">
+          <button @click="activeTab = 'manual'" :class="['flex items-center justify-center gap-2 p-2 rounded-md transition-colors font-medium',
+            activeTab === 'manual' ? 'bg-white shadow' : 'text-gray-600 hover:bg-gray-200']">
+            <i class="i-lucide-file-plus w-4 h-4"></i> Input Manual
+          </button>
+          <button @click="activeTab = 'import'" :class="['flex items-center justify-center gap-2 p-2 rounded-md transition-colors font-medium',
+            activeTab === 'import' ? 'bg-white shadow' : 'text-gray-600 hover:bg-gray-200']">
+            <i class="i-lucide-upload w-4 h-4"></i> Import Excel
+          </button>
+        </div>
+
+        <!-- Alert Messages -->
+        <div v-if="error || success" :class="['mb-6 p-4 rounded-lg text-sm',
+          error ? 'bg-red-50 text-red-800' : 'bg-green-50 text-green-800']">
+          <p>{{ error || success }}</p>
+        </div>
+
+        <!-- Manual Input Tab -->
+        <div v-if="activeTab === 'manual'">
+          <div class="bg-gray-50 p-6 rounded-lg border">
+            <h3 class="font-medium text-gray-800 mb-4 text-lg">Input Data Manual</h3>
+            <p class="text-sm text-gray-600 mb-6">Isi form di bawah ini untuk menambahkan data baru secara manual.</p>
+
+            <!-- Manual form content would go here -->
+            <div class="text-center py-8 text-gray-500">
+              <i class="i-lucide-file-plus w-12 h-12 mx-auto mb-4 opacity-50"></i>
+              <p>Form input manual akan ditambahkan di sini</p>
+            </div>
           </div>
+        </div>
 
-          <!-- Alert Messages -->
-          <div v-if="error || success"
-            :class="[
-              'mb-6 p-4 rounded-lg',
-              error ? 'bg-red-50' : 'bg-green-50'
-            ]"
-          >
-            <p :class="error ? 'text-red-800' : 'text-green-800'">
-              {{ error || success }}
+        <!-- Import Excel Tab -->
+        <div v-if="activeTab === 'import'" class="space-y-6">
+          <!-- Template Generator Section -->
+          <div class="bg-gray-50 p-6 rounded-lg border">
+            <h3 class="font-medium text-gray-800 mb-3 text-lg">Generate Template Kustom</h3>
+            <p class="text-sm text-gray-600 mb-4">Pilih filter di bawah ini untuk membuat template Excel dari server.
             </p>
-          </div>
 
-          <!-- Manual Input Form -->
-          <div v-if="activeTab === 'manual'">
-            <form @submit.prevent="handleManualSubmit" class="space-y-6">
-              <!-- Jenis Data -->
+            <div class="space-y-4">
+              <!-- Cities Selection -->
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700">
-                  Kategori <span class="text-red-500">*</span>
+                  Pilih Wilayah <span class="text-red-500">*</span>
                 </label>
-                <select
-                  v-model="form.category_id"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-
-                >
-                  <option disabled value="">Pilih Kategori</option>
-                  <option v-for="category in categories" :key="category.id" :value="category.id">
-                    {{ category.name }}
-                  </option>
+                <select multiple v-model="templateFilters.cities"
+                  class="w-full h-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
                 </select>
+                <p class="text-xs text-gray-500">Tahan Ctrl/Cmd untuk memilih beberapa wilayah</p>
               </div>
 
-              <!-- Wilayah -->
-              <div class="space-y-2">
+              <!-- Categories Selection with Search -->
+              <div class="space-y-2 relative" ref="dropdownRef">
                 <label class="block text-sm font-medium text-gray-700">
-                  Kabupaten/Kota <span class="text-red-500">*</span>
+                  Pilih Kategori <span class="text-red-500">*</span>
                 </label>
-                <select
-                  v-model="form.city"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option disabled value="">Pilih wilayah</option>
-                  <option v-for="city in cities" :key="city" :value="city">
-                    {{ city }}
-                  </option>
-                </select>
-              </div>
+                <div class="relative">
+                  <input type="text" v-model="category.searchTerm" @focus="openDropdown" placeholder="Cari kategori..."
+                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <!-- Clear button -->
+                  <button v-if="category.searchTerm" type="button" @click="clearCategory"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    ✕
+                  </button>
+                </div>
 
-              <!-- Tahun -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Periode Data <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  v-model="form.year"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  min="2000"
-                  max="2025"
-                  required
-                />
-              </div>
+                <!-- Dropdown -->
+                <div v-if="category.dropdownOpen"
+                  class="absolute w-full bg-white border border-gray-300 mt-1 max-h-64 overflow-y-auto rounded-md shadow-lg z-10">
+                  <div v-for="option in category.filtered" :key="option.id" @click="selectCategory(option)" :class="['px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm',
+                    templateFilters.categories.includes(option.id) ? 'bg-blue-50 text-blue-700' : '']">
+                    <span class="flex items-center justify-between">
+                      {{ option.name }}
+                      <span v-if="templateFilters.categories.includes(option.id)" class="text-blue-600">✓</span>
+                    </span>
+                  </div>
+                  <div v-if="category.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+                    Tidak ada kategori ditemukan
+                  </div>
+                </div>
 
-              <!-- Dynamic Fields based on Category -->
-              <div v-if="categoryFields.length > 0" class="space-y-4">
-                <div v-for="(field, index) in categoryFields" :key="index" class="space-y-2">
-                  <label class="block text-sm font-medium text-gray-700">
-                    {{ field.label }} <span v-if="field.required" class="text-red-500">*</span>
-                  </label>
-
-                  <!-- Text input -->
-                  <input
-                    v-if="field.type === 'text'"
-                    type="text"
-                    v-model="form.fields[field.name]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    :required="field.required"
-                  />
-
-                  <!-- Number input -->
-                  <input
-                    v-else-if="field.type === 'number'"
-                    type="number"
-                    v-model="form.fields[field.name]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    :step="field.step || '0.01'"
-                    :min="field.min"
-                    :max="field.max"
-                    :required="field.required"
-                  />
-
-                  <!-- Select input -->
-                  <select
-                    v-else-if="field.type === 'select'"
-                    v-model="form.fields[field.name]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    :required="field.required"
-                  >
-                    <option disabled value="">Pilih {{ field.label }}</option>
-                    <option v-for="option in field.options" :key="option.value" :value="option.value">
-                      {{ option.label }}
-                    </option>
-                  </select>
-
-                  <!-- Date input -->
-                  <input
-                    v-else-if="field.type === 'date'"
-                    type="date"
-                    v-model="form.fields[field.name]"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    :required="field.required"
-                  />
-
-                  <p v-if="field.description" class="text-xs text-gray-500 mt-1">
-                    {{ field.description }}
-                  </p>
+                <!-- Selected Categories Display -->
+                <div v-if="templateFilters.categories.length > 0" class="flex flex-wrap gap-2 mt-2">
+                  <span v-for="categoryId in templateFilters.categories" :key="categoryId"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
+                    {{ getCategoryName(categoryId) }}
+                    <button type="button" @click="removeCategory(categoryId)" class="hover:text-blue-900">
+                      ✕
+                    </button>
+                  </span>
                 </div>
               </div>
 
-              <!-- Nilai -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Nilai <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  v-model="form.amount"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  step="0.01"
-                  required
-                />
-              </div>
-
-              <!-- Submit Button -->
-              <div class="pt-4">
-                <button
-                  type="submit"
-                  :disabled="isLoading"
-                  :class="[
-                    'w-full px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2',
-                    !isLoading
-                      ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                      : 'bg-gray-400 cursor-not-allowed'
-                  ]"
-                >
-                  <span v-if="isLoading">
-                    <svg class="inline w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                      <path class="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Memproses...
-                  </span>
-                  <span v-else>
-                    Simpan Data
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Import CSV -->
-          <div v-if="activeTab === 'import'" class="space-y-6">
-            <!-- Template Generator Form -->
-            <div class="bg-gray-50 p-4 rounded-lg mb-6">
-              <h3 class="font-medium text-gray-700 mb-3">Generate Template CSV</h3>
-
-              <div class="space-y-4">
-                <!-- Kategori untuk Template -->
+              <!-- Year Range -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700">
-                    Kategori <span class="text-red-500">*</span>
+                    Tahun Mulai <span class="text-red-500">*</span>
                   </label>
-                  <select
-                    v-model="templateForm.category_id"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option disabled value="">Pilih Kategori</option>
-                    <option v-for="category in categories" :key="category.id" :value="category.id">
-                      {{ category.name }}
-                    </option>
-                  </select>
+                  <input type="number" v-model="templateFilters.startYear" :min="2020" :max="2030"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <!-- Pilih Wilayah (Multiple) -->
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                      Wilayah
-                    </label>
-                    <div class="border border-gray-300 rounded-md p-2 max-h-32 overflow-y-auto">
-                      <div v-for="city in cities" :key="city" class="flex items-center mb-1">
-                        <input
-                          type="checkbox"
-                          :id="'city-' + city"
-                          v-model="templateForm.selectedCities"
-                          :value="city"
-                          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <label :for="'city-' + city" class="ml-2 text-sm text-gray-700">
-                          {{ city }}
-                        </label>
-                      </div>
-                    </div>
-                    <p class="text-xs text-gray-500">
-                      Tidak ada pilihan = Semua wilayah
-                    </p>
-                  </div>
-
-                  <!-- Tahun Range -->
-                  <div class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                      Tahun
-                    </label>
-                    <div class="grid grid-cols-2 gap-2">
-                      <div>
-                        <label class="text-xs text-gray-600">Dari</label>
-                        <input
-                          type="number"
-                          v-model="templateForm.yearStart"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          min="2000"
-                          max="2025"
-                        />
-                      </div>
-                      <div>
-                        <label class="text-xs text-gray-600">Sampai</label>
-                        <input
-                          type="number"
-                          v-model="templateForm.yearEnd"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          min="2000"
-                          max="2025"
-                        />
-                      </div>
-                    </div>
-                    <p class="text-xs text-gray-500">
-                      Kosong = Tahun saat ini
-                    </p>
-                  </div>
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-gray-700">
+                    Tahun Selesai <span class="text-red-500">*</span>
+                  </label>
+                  <input type="number" v-model="templateFilters.endYear" :min="templateFilters.startYear || 2020"
+                    :max="2030"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-
-                <!-- Generate Button -->
-                <button
-                  @click="downloadTemplate"
-                  :disabled="isGeneratingTemplate || !templateForm.category_id"
-                  class="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                  <span v-if="isGeneratingTemplate">
-                    <svg class="inline w-4 h-4 mr-2 animate-spin" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
-                      <path class="opacity-75" fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Memproses...
-                  </span>
-                  <span v-else class="flex items-center justify-center gap-2">
-                    <i class="i-lucide-file-down w-4 h-4"></i>
-                    Download Template CSV
-                  </span>
-                </button>
               </div>
             </div>
 
-            <!-- File Upload Area -->
-            <div class="border-2 border-dashed rounded-lg p-6 text-center">
-              <label class="cursor-pointer block">
-                <div class="bg-gray-50 p-6 rounded-lg hover:bg-gray-100 transition-colors">
-                  <i class="i-lucide-upload w-12 h-12 mx-auto text-gray-400 mb-4"></i>
-                  <p class="text-sm text-gray-600 mb-2">
-                    Klik atau seret file CSV ke sini
-                  </p>
-                  <p class="text-xs text-gray-500">
-                    Format yang didukung: CSV
-                  </p>
-                </div>
-                <input
-                  type="file"
-                  accept=".csv"
-                  @change="handleFileUpload"
-                  class="hidden"
-                />
-              </label>
-            </div>
-
-            <!-- Upload Progress -->
-            <div v-if="isUploading" class="mt-4">
-              <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: uploadProgress + '%' }"></div>
-              </div>
-              <p class="text-sm text-gray-600 mt-2 text-center">{{ uploadProgress }}% Terupload</p>
-            </div>
+            <!-- Generate Template Button -->
+            <button @click="downloadTemplate" :disabled="isGeneratingTemplate || !isTemplateFormValid" :class="[
+              'w-full mt-6 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
+              isTemplateFormValid && !isGeneratingTemplate
+                ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                : 'bg-gray-400 cursor-not-allowed'
+            ]">
+              <span v-if="isGeneratingTemplate" class="flex items-center justify-center gap-2">
+                <svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+                    fill="none" />
+                  <path class="opacity-75" fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Generating...
+              </span>
+              <span v-else class="flex items-center justify-center gap-2">
+                <i class="i-lucide-file-down w-4 h-4"></i>
+                Generate & Download Template
+              </span>
+            </button>
           </div>
+
+          <!-- File Upload Section -->
+          <div
+            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+            <label class="cursor-pointer block">
+              <i class="i-lucide-upload w-12 h-12 mx-auto text-gray-400 mb-4"></i>
+              <p class="text-sm font-medium text-gray-700 mb-2">Klik atau seret file Excel untuk diupload</p>
+              <p class="text-xs text-gray-500">Format yang didukung: .xlsx, .xls</p>
+              <input type="file" @change="handleFileUpload" accept=".xlsx,.xls" class="hidden" />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay for File Upload -->
+    <div v-if="isUploading"
+      class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center backdrop-blur-sm">
+      <div class="bg-white p-6 rounded-lg shadow-xl">
+        <div class="flex flex-col items-center space-y-4">
+          <svg class="w-12 h-12 text-blue-600 animate-spin" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p class="text-gray-700 font-medium">Sedang mengunggah file...</p>
+          <p class="text-sm text-gray-500">Mohon tunggu sebentar</p>
         </div>
       </div>
     </div>
@@ -335,167 +183,131 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive, computed, watch } from 'vue';
+import { ref, reactive, onMounted, onUnmounted, watch, computed } from 'vue';
+import { useToast } from 'vue-toastification';
+import api from '@/api/api';
 
-const activeTab = ref('manual');
+// Toast notification
+const toast = useToast();
+
+// State management
+const activeTab = ref('import'); // Default to import tab
 const isLoading = ref(false);
 const isGeneratingTemplate = ref(false);
 const isUploading = ref(false);
-const uploadProgress = ref(0);
-
-const form = reactive({
-  amount: '',
-  year: new Date().getFullYear(),
-  city: '',
-  category_id: '',
-  fields: {}
-});
-
-const templateForm = reactive({
-  category_id: '',
-  selectedCities: [],
-  yearStart: new Date().getFullYear(),
-  yearEnd: new Date().getFullYear()
-});
-
-const categories = ref([]);
-const categoryFields = ref([]);
 const error = ref('');
 const success = ref('');
+const dropdownRef = ref(null);
 
-const cities = [
-  "Kota Yogyakarta",
-  "Kulon Progo",
-  "Kota Bandung",
-  "Kota Surabaya",
-  "Banyuwangi"
-];
+// Static data
+const cities = ["Kota Yogyakarta", "Kota Surabaya", "Kota Bandung", "Kulon Progo", "Banyuwangi"];
+const categories = ref([]);
 
+// Category dropdown state
+const category = ref({
+  searchTerm: '',
+  filtered: [],
+  dropdownOpen: false
+});
+
+// Template filters
+const templateFilters = reactive({
+  cities: [],
+  categories: [],
+  startYear: new Date().getFullYear(),
+  endYear: new Date().getFullYear(),
+});
+
+// Computed properties
+const isTemplateFormValid = computed(() =>
+  templateFilters.cities.length > 0 &&
+  templateFilters.categories.length > 0 &&
+  templateFilters.startYear &&
+  templateFilters.endYear &&
+  templateFilters.startYear <= templateFilters.endYear
+);
+
+// Methods
 const fetchCategories = async () => {
   try {
-    const response = await fetch('https://api.datapolicy.jogjacode.id/api/categories');
-    const data = await response.json();
-    categories.value = data;
+    isLoading.value = true;
+    const response = await api.get('/categories');
+    categories.value = response.data;
+
+    // Initialize filtered categories
+    const options = response.data.map(c => ({ id: c.id, name: c.name }));
+    category.value.filtered = options.sort((a, b) => a.name.localeCompare(b.name));
   } catch (err) {
-    error.value = 'Gagal memuat kategori: ' + err.message;
-  }
-};
-
-const loadCategoryFields = async () => {
-  if (!form.category_id) {
-    categoryFields.value = [];
-    form.fields = {};
-    return;
-  }
-
-  isLoading.value = true;
-  try {
-    const response = await fetch(`https://api.datapolicy.jogjacode.id/api/categories/${form.category_id}/fields`);
-    if (!response.ok) throw new Error('Gagal memuat kolom kategori');
-
-    const data = await response.json();
-    categoryFields.value = data;
-
-    // Initialize form fields object
-    form.fields = {};
-    categoryFields.value.forEach(field => {
-      form.fields[field.name] = field.default || '';
-    });
-  } catch (err) {
-    error.value = 'Gagal memuat kolom kategori: ' + err.message;
-    categoryFields.value = [];
+    console.error('Error fetching categories:', err);
+    error.value = 'Gagal memuat data kategori.';
+    toast.error('Gagal memuat data kategori');
   } finally {
     isLoading.value = false;
   }
 };
 
-const handleManualSubmit = async () => {
-  isLoading.value = true;
-  error.value = '';
-  success.value = '';
+const filterCategories = () => {
+  const term = category.value.searchTerm.toLowerCase();
+  const options = categories.value.map(c => ({ id: c.id, name: c.name }));
+  category.value.filtered = options.filter(opt =>
+    opt.name.toLowerCase().includes(term)
+  ).sort((a, b) => a.name.localeCompare(b.name));
+};
 
-  try {
-    // Combine base form data with dynamic fields
-    const formData = {
-      ...form,
-      fields: form.fields
-    };
+const selectCategory = (option) => {
+  // Toggle selection instead of single select
+  const index = templateFilters.categories.indexOf(option.id);
+  if (index === -1) {
+    templateFilters.categories.push(option.id);
+  } else {
+    templateFilters.categories.splice(index, 1);
+  }
 
-    const response = await fetch('https://api.datapolicy.jogjacode.id/api/data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
+  // Keep dropdown open for multiple selections
+  // Don't close dropdown automatically
+};
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Gagal menyimpan data');
-    }
-
-    success.value = 'Data berhasil ditambahkan';
-    form.amount = '';
-    form.fields = {};
-
-    // Reset dynamic fields
-    categoryFields.value.forEach(field => {
-      form.fields[field.name] = field.default || '';
-    });
-
-    // Keep current category, city and year for convenience
-  } catch (err) {
-    error.value = err.message || 'Gagal menyimpan data';
-  } finally {
-    isLoading.value = false;
+const removeCategory = (categoryId) => {
+  const index = templateFilters.categories.indexOf(categoryId);
+  if (index !== -1) {
+    templateFilters.categories.splice(index, 1);
   }
 };
 
-const handleFileUpload = async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+const clearCategory = () => {
+  templateFilters.categories = [];
+  category.value.searchTerm = '';
+  category.value.filtered = categories.value.map(c => ({ id: c.id, name: c.name }));
+  closeDropdown();
+};
 
-  isUploading.value = true;
-  uploadProgress.value = 0;
-  error.value = '';
-  success.value = '';
+const getCategoryName = (categoryId) => {
+  const cat = categories.value.find(c => c.id === categoryId);
+  return cat ? cat.name : '';
+};
 
-  const formData = new FormData();
-  formData.append('file', file);
+const openDropdown = () => {
+  category.value.dropdownOpen = true;
+  filterCategories();
+};
 
-  try {
-    // Simulate progress upload
-    const interval = setInterval(() => {
-      if (uploadProgress.value < 90) {
-        uploadProgress.value += 10;
-      }
-    }, 300);
+const closeDropdown = () => {
+  category.value.dropdownOpen = false;
+};
 
-    const response = await fetch('https://api.datapolicy.jogjacode.id/api/upload', {
-      method: 'POST',
-      body: formData
-    });
-
-    clearInterval(interval);
-    uploadProgress.value = 100;
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Gagal mengimpor data');
-    }
-
-    success.value = 'File berhasil diimpor';
-    event.target.value = '';
-
-    // Wait a bit before hiding the progress bar
-    setTimeout(() => {
-      isUploading.value = false;
-    }, 1000);
-  } catch (err) {
-    error.value = err.message || 'Gagal mengimpor file';
-    isUploading.value = false;
+const handleClickOutside = (event) => {
+  if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
+    closeDropdown();
   }
 };
 
 const downloadTemplate = async () => {
+  if (!isTemplateFormValid.value) {
+    error.value = 'Mohon lengkapi semua field yang diperlukan.';
+    toast.warning('Mohon lengkapi semua field yang diperlukan');
+    return;
+  }
+
   isGeneratingTemplate.value = true;
   error.value = '';
   success.value = '';
@@ -503,69 +315,209 @@ const downloadTemplate = async () => {
   try {
     // Build query parameters
     const params = new URLSearchParams();
-    params.append('category_id', templateForm.category_id);
+    templateFilters.cities.forEach(city => params.append('city', city));
 
-    if (templateForm.selectedCities.length > 0) {
-      templateForm.selectedCities.forEach(city => {
-        params.append('cities', city);
-      });
-    }
+    // Get category names from IDs
+    const categoryNames = templateFilters.categories.map(catId => {
+      const cat = categories.value.find(c => c.id === catId);
+      return cat ? cat.name : '';
+    }).filter(Boolean);
 
-    if (templateForm.yearStart) {
-      params.append('year_start', templateForm.yearStart);
-    }
+    categoryNames.forEach(name => params.append('category', name));
+    params.append('start_year', templateFilters.startYear);
+    params.append('end_year', templateFilters.endYear);
 
-    if (templateForm.yearEnd) {
-      params.append('year_end', templateForm.yearEnd);
-    }
+    const response = await api.get(`/export-custom-template?${params.toString()}`, {
+      responseType: 'blob',
+    });
 
-    const response = await fetch(`https://api.datapolicy.jogjacode.id/api/export-template?${params.toString()}`);
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || 'Gagal mengunduh template');
-    }
-
-    const blob = await response.blob();
-    const fileName = response.headers.get('content-disposition')?.split('filename=')[1] || `template-${templateForm.category_id}.csv`;
-
-    const url = window.URL.createObjectURL(blob);
+    // Create download link
+    const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
-    link.download = fileName;
+
+    // Get filename from response headers
+    const contentDisposition = response.headers['content-disposition'];
+    let filename = 'template-kustom.xlsx';
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+      if (filenameMatch && filenameMatch.length === 2) {
+        filename = filenameMatch[1];
+      }
+    }
+
+    link.setAttribute('download', filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
 
-    success.value = 'Template CSV berhasil diunduh';
+    success.value = 'Template kustom berhasil diunduh dari server.';
+    toast.success('Template berhasil diunduh');
   } catch (err) {
-    error.value = 'Gagal mengunduh template: ' + err.message;
+    console.error('Error downloading template:', err);
+    error.value = err.response?.data?.error || 'Gagal mengunduh template. Pastikan semua filter terisi.';
+    toast.error('Gagal mengunduh template');
   } finally {
     isGeneratingTemplate.value = false;
   }
 };
 
-// Validasi form template
-watch(() => templateForm.yearStart, (newValue) => {
-  if (newValue > templateForm.yearEnd) {
-    templateForm.yearEnd = newValue;
-  }
-});
+const handleFileUpload = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-watch(() => templateForm.yearEnd, (newValue) => {
-  if (newValue < templateForm.yearStart) {
-    templateForm.yearStart = newValue;
-  }
-});
+  // Validate file type
+  const allowedTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel'
+  ];
 
-// Reset alerts when tab changes
+  if (!allowedTypes.includes(file.type)) {
+    error.value = 'Format file tidak didukung. Mohon upload file Excel (.xlsx atau .xls).';
+    toast.error('Format file tidak didukung');
+    event.target.value = '';
+    return;
+  }
+
+  // Validate file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    error.value = 'Ukuran file terlalu besar. Maksimal 10MB.';
+    toast.error('Ukuran file terlalu besar');
+    event.target.value = '';
+    return;
+  }
+
+  isUploading.value = true;
+  error.value = '';
+  success.value = '';
+
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 30000 // 30 second timeout for large files
+    });
+
+    success.value = response.data.message || 'File berhasil diunggah dan diproses.';
+    toast.success('File berhasil diunggah');
+  } catch (err) {
+    console.error('Error uploading file:', err);
+    const errorMessage = err.response?.data?.error || err.message || 'Gagal mengunggah file.';
+    error.value = errorMessage;
+    toast.error(errorMessage);
+  } finally {
+    isUploading.value = false;
+    event.target.value = ''; // Reset file input
+  }
+};
+
+// Watchers
 watch(activeTab, () => {
   error.value = '';
   success.value = '';
 });
 
-onMounted(() => {
-  fetchCategories();
+watch(() => category.value.searchTerm, filterCategories);
+
+// Validate year range
+watch(() => [templateFilters.startYear, templateFilters.endYear], ([startYear, endYear]) => {
+  if (startYear && endYear && startYear > endYear) {
+    templateFilters.endYear = startYear;
+  }
+});
+
+// Auto-clear messages after 5 seconds
+watch([error, success], () => {
+  if (error.value || success.value) {
+    setTimeout(() => {
+      error.value = '';
+      success.value = '';
+    }, 5000);
+  }
+});
+
+// Lifecycle
+onMounted(async () => {
+  await fetchCategories();
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
+
+<style scoped>
+/* Icon styles */
+.i-lucide-file-plus,
+.i-lucide-upload,
+.i-lucide-file-down {
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  background-repeat: no-repeat;
+  background-size: 100%;
+  vertical-align: middle;
+}
+
+.i-lucide-file-plus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M12 15v-6'/%3E%3Cpath d='M9 12h6'/%3E%3C/svg%3E");
+}
+
+.i-lucide-upload {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cline x1='12' x2='12' y1='3' y2='15'/%3E%3C/svg%3E");
+}
+
+.i-lucide-file-down {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M12 15V3'/%3E%3Cpath d='m9 12 3 3 3-3'/%3E%3C/svg%3E");
+}
+
+/* Custom scrollbar for multi-select */
+select[multiple]::-webkit-scrollbar {
+  width: 8px;
+}
+
+select[multiple]::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+select[multiple]::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+select[multiple]::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Hover effects */
+.border-dashed:hover {
+  border-color: #3b82f6;
+  background-color: #f8faff;
+}
+
+/* Focus states */
+input:focus,
+select:focus {
+  outline: none;
+  ring: 2px;
+  ring-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+/* Card styling */
+.card {
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+</style>

@@ -1,71 +1,91 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+// Import layout components
+import HomeLayout from "@/layout/HomeLayout.vue";
+import AuthLayout from "@/layout/AuthLayout.vue";
+
 const routes = [
+  // Rute untuk autentikasi (tanpa sidebar/navbar)
   {
-    path: "/apiscraping",
-    home: 'apiscraping',
-    component: () => import("@/components/Pengumpulan Data/APIScraping.vue")
+    path: "/auth",
+    component: AuthLayout,
+    children: [
+      {
+        path: "login",
+        name: "Login",
+        component: () => import("@/views/LoginView.vue"),
+      },
+      // Anda bisa menambahkan halaman register di sini nanti
+      // {
+      //   path: "register",
+      //   name: "Register",
+      //   component: () => import("@/views/RegisterView.vue"),
+      // },
+    ],
   },
+
+  // Rute untuk aplikasi utama (dengan sidebar/navbar)
   {
-    path: "/visualization",
-    component: () => import("@/components/VisualisasiData.vue")
+    path: "/app", // Kita gunakan prefix '/app' untuk halaman internal
+    component: HomeLayout,
+    redirect: '/app/dashboard', // Halaman default setelah login
+    children: [
+      {
+        path: "dashboard",
+        name: "Dashboard",
+        component: () => import("@/components/VisualisasiData.vue"),
+      },
+      {
+        path: "apiscraping",
+        name: "APIScraping",
+        component: () => import("@/components/Pengumpulan Data/APIScraping.vue"),
+      },
+            {
+        path: "apbd",
+        name: "ScrapeAPBD",
+        component: () => import("@/components/Pengumpulan Data/ScrapeAPBD.vue"),
+      },
+      {
+        path: "manual",
+        name: "AddData",
+        component: () => import("@/components/Pengumpulan Data/AddData.vue"),
+      },
+      {
+        path: "generate-file",
+        name: "GenerateFile",
+        component: () => import("@/components/GenerateFile.vue"),
+      },
+      {
+        path: "listdata",
+        name: "ListData",
+        component: () => import("@/components/AllData.vue"),
+      },
+      {
+        path: "analisisregresi",
+        name: "AnalisisRegresi",
+        component: () => import("@/components/AnalysisRegresi.vue"),
+      },
+      {
+        path: "users",
+        name: "UserManagement",
+        component: () => import("@/components/UserManagement.vue"),
+      },
+    ],
   },
+
+  // Rute root '/' akan selalu redirect ke halaman login.
+  // Ini menjadi satu-satunya entry point saat web dibuka.
   {
-    path: "/barchart",
-    component: () => import("@/components/BarChart.vue")
+    path: '/',
+    redirect: '/app/dashboard',
   },
-  {
-    path: "/linechart",
-    component: () => import("@/components/LineChart.vue")
-  },
-  {
-    path: "/table",
-    component: () => import("@/components/TableComponent.vue")
-  },
-  {
-    path: "/analisisregresi",
-    component: () => import("@/components/AnalysisRegresi.vue")
-  },
-  {
-    path: "/scrappdf",
-    component: () => import("@/components/ScrapPDF.vue")
-  },
-  {
-    path: "/analisisklasifikasi",
-    component: () => import("@/components/AnalysisKlasifikasi.vue")
-  },
-  {
-    path: "/analisisklasterisasi",
-    component: () => import("@/components/AnalysisKlasterisasi.vue")
-  },
-  {
-    path: "/webscraping",
-    component: () => import("@/components/Pengumpulan Data/WebScraping.vue")
-  },
-  {
-    path: "/manual",
-    component: () => import("@/components/Pengumpulan Data/AddData.vue")
-  },
-  {
-    path: "/listdata",
-    component: () => import("@/components/AllData.vue")
-  },
-  {
-    path: "/adddata",
-    component: () => import("@/components/Pengumpulan Data/AddData.vue")
-  },
-  {
-    path: "/generate-file",
-    component: () => import("@/components/GenerateFile.vue")
-  },
-  {
-    path: "/indeks-gini",
-    component: () => import("@/components/Form/IndeksGini.vue")
-  },
-  {
-    path: "/scraping-list",
-    component: () => import("@/components/ScrapingList.vue")
-  },
+
+  // (Opsional) Rute catch-all untuk halaman yang tidak ditemukan
+  // Akan mengarahkan kembali ke login jika URL salah
+  // {
+  //   path: '/:pathMatch(.*)*',
+  //   redirect: '/auth/login'
+  // }
 ];
 
 const router = createRouter({
