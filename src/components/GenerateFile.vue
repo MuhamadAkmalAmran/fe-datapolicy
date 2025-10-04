@@ -1,6 +1,6 @@
 <template>
   <div class="w-full mx-auto p-4">
-    <div class="card p-10 md:p-8 shadow-lg bg-white rounded-lg">
+    <div class="card p-10 md:p-8 shadow-lg bg-white rounded-lg hover:shadow-xl transition-all duration-200">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-8">
         <h1 class="text-3xl font-bold text-gray-800">Pengelolaan Data</h1>
@@ -53,16 +53,47 @@
             </p>
 
             <div class="space-y-4">
-              <!-- Cities Selection -->
-              <div class="space-y-2">
+              <!-- Cities Selection with Search -->
+              <div class="space-y-2 relative" ref="cityDropdownRef">
                 <label class="block text-sm font-medium text-gray-700">
                   Pilih Wilayah <span class="text-red-500">*</span>
                 </label>
-                <select multiple v-model="templateFilters.cities"
-                  class="w-full h-24 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option v-for="city in cities" :key="city" :value="city">{{ city }}</option>
-                </select>
-                <p class="text-xs text-gray-500">Tahan Ctrl/Cmd untuk memilih beberapa wilayah</p>
+                <div class="relative">
+                  <input type="text" v-model="city.searchTerm" @focus="openCityDropdown" placeholder="Cari wilayah..."
+                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+                  <!-- Clear button -->
+                  <button v-if="city.searchTerm" type="button" @click="clearCity"
+                    class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Dropdown -->
+                <div v-if="city.dropdownOpen"
+                  class="absolute w-full bg-white border border-gray-300 mt-1 max-h-64 overflow-y-auto rounded-md shadow-lg z-10 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                  <div v-for="option in city.filtered" :key="option" @click="selectCity(option)" :class="['px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm',
+                    templateFilters.cities.includes(option) ? 'bg-blue-50 text-blue-700' : '']">
+                    <span class="flex items-center justify-between">
+                      {{ option }}
+                      <span v-if="templateFilters.cities.includes(option)" class="text-blue-600">✓</span>
+                    </span>
+                  </div>
+                  <div v-if="city.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+                    Tidak ada wilayah ditemukan
+                  </div>
+                </div>
+
+                <!-- Selected Cities Display -->
+                <div v-if="templateFilters.cities.length > 0" class="flex flex-wrap gap-2 mt-2">
+                  <span v-for="cityName in templateFilters.cities" :key="cityName"
+                    class="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                    {{ cityName }}
+                    <button type="button" @click="removeCity(cityName)" class="hover:text-green-900">
+                      ✕
+                    </button>
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500">Klik untuk memilih beberapa wilayah</p>
               </div>
 
               <!-- Categories Selection with Search -->
@@ -72,7 +103,7 @@
                 </label>
                 <div class="relative">
                   <input type="text" v-model="category.searchTerm" @focus="openDropdown" placeholder="Cari kategori..."
-                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                   <!-- Clear button -->
                   <button v-if="category.searchTerm" type="button" @click="clearCategory"
                     class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -82,7 +113,7 @@
 
                 <!-- Dropdown -->
                 <div v-if="category.dropdownOpen"
-                  class="absolute w-full bg-white border border-gray-300 mt-1 max-h-64 overflow-y-auto rounded-md shadow-lg z-10">
+                  class="absolute w-full bg-white border border-gray-300 mt-1 max-h-64 overflow-y-auto rounded-md shadow-lg z-10 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                   <div v-for="option in category.filtered" :key="option.id" @click="selectCategory(option)" :class="['px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm',
                     templateFilters.categories.includes(option.id) ? 'bg-blue-50 text-blue-700' : '']">
                     <span class="flex items-center justify-between">
@@ -105,6 +136,7 @@
                     </button>
                   </span>
                 </div>
+                <p class="text-xs text-gray-500">Klik untuk memilih beberapa kategori</p>
               </div>
 
               <!-- Year Range -->
@@ -114,7 +146,7 @@
                     Tahun Mulai <span class="text-red-500">*</span>
                   </label>
                   <input type="number" v-model="templateFilters.startYear" :min="2020" :max="2030"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                 </div>
                 <div class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700">
@@ -122,14 +154,14 @@
                   </label>
                   <input type="number" v-model="templateFilters.endYear" :min="templateFilters.startYear || 2020"
                     :max="2030"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
                 </div>
               </div>
             </div>
 
             <!-- Generate Template Button -->
             <button @click="downloadTemplate" :disabled="isGeneratingTemplate || !isTemplateFormValid" :class="[
-              'w-full mt-6 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2',
+              'w-full mt-6 px-4 py-2 text-sm font-medium text-white rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-200',
               isTemplateFormValid && !isGeneratingTemplate
                 ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                 : 'bg-gray-400 cursor-not-allowed'
@@ -152,7 +184,7 @@
 
           <!-- File Upload Section -->
           <div
-            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
+            class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200">
             <label class="cursor-pointer block">
               <i class="i-lucide-upload w-12 h-12 mx-auto text-gray-400 mb-4"></i>
               <p class="text-sm font-medium text-gray-700 mb-2">Klik atau seret file Excel untuk diupload</p>
@@ -198,10 +230,18 @@ const isUploading = ref(false);
 const error = ref('');
 const success = ref('');
 const dropdownRef = ref(null);
+const cityDropdownRef = ref(null);
 
 // Static data
 const cities = ["Kota Yogyakarta", "Kota Surabaya", "Kota Bandung", "Kulon Progo", "Banyuwangi"];
 const categories = ref([]);
+
+// City dropdown state
+const city = ref({
+  searchTerm: '',
+  filtered: [],
+  dropdownOpen: false
+});
 
 // Category dropdown state
 const category = ref({
@@ -246,6 +286,48 @@ const fetchCategories = async () => {
   }
 };
 
+// City methods
+const filterCities = () => {
+  const term = city.value.searchTerm.toLowerCase();
+  city.value.filtered = cities.filter(cityName =>
+    cityName.toLowerCase().includes(term)
+  ).sort((a, b) => a.localeCompare(b));
+};
+
+const selectCity = (cityName) => {
+  // Toggle selection instead of single select
+  const index = templateFilters.cities.indexOf(cityName);
+  if (index === -1) {
+    templateFilters.cities.push(cityName);
+  } else {
+    templateFilters.cities.splice(index, 1);
+  }
+};
+
+const removeCity = (cityName) => {
+  const index = templateFilters.cities.indexOf(cityName);
+  if (index !== -1) {
+    templateFilters.cities.splice(index, 1);
+  }
+};
+
+const clearCity = () => {
+  templateFilters.cities = [];
+  city.value.searchTerm = '';
+  city.value.filtered = [...cities];
+  closeCityDropdown();
+};
+
+const openCityDropdown = () => {
+  city.value.dropdownOpen = true;
+  filterCities();
+};
+
+const closeCityDropdown = () => {
+  city.value.dropdownOpen = false;
+};
+
+// Category methods
 const filterCategories = () => {
   const term = category.value.searchTerm.toLowerCase();
   const options = categories.value.map(c => ({ id: c.id, name: c.name }));
@@ -262,9 +344,6 @@ const selectCategory = (option) => {
   } else {
     templateFilters.categories.splice(index, 1);
   }
-
-  // Keep dropdown open for multiple selections
-  // Don't close dropdown automatically
 };
 
 const removeCategory = (categoryId) => {
@@ -298,6 +377,9 @@ const closeDropdown = () => {
 const handleClickOutside = (event) => {
   if (dropdownRef.value && !dropdownRef.value.contains(event.target)) {
     closeDropdown();
+  }
+  if (cityDropdownRef.value && !cityDropdownRef.value.contains(event.target)) {
+    closeCityDropdown();
   }
 };
 
@@ -424,6 +506,7 @@ watch(activeTab, () => {
 });
 
 watch(() => category.value.searchTerm, filterCategories);
+watch(() => city.value.searchTerm, filterCities);
 
 // Validate year range
 watch(() => [templateFilters.startYear, templateFilters.endYear], ([startYear, endYear]) => {
@@ -445,6 +528,8 @@ watch([error, success], () => {
 // Lifecycle
 onMounted(async () => {
   await fetchCategories();
+  // Initialize city filtered list
+  city.value.filtered = [...cities];
   document.addEventListener('click', handleClickOutside);
 });
 
@@ -453,17 +538,12 @@ onUnmounted(() => {
 });
 </script>
 
-<style scoped>
-/* Icon styles */
+<style>
+/* Icon styles using Tailwind-compatible approach */
 .i-lucide-file-plus,
 .i-lucide-upload,
 .i-lucide-file-down {
-  display: inline-block;
-  width: 1.1em;
-  height: 1.1em;
-  background-repeat: no-repeat;
-  background-size: 100%;
-  vertical-align: middle;
+  @apply inline-block w-4 h-4 bg-no-repeat bg-contain align-middle;
 }
 
 .i-lucide-file-plus {
@@ -478,46 +558,32 @@ onUnmounted(() => {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M12 15V3'/%3E%3Cpath d='m9 12 3 3 3-3'/%3E%3C/svg%3E");
 }
 
-/* Custom scrollbar for multi-select */
-select[multiple]::-webkit-scrollbar {
-  width: 8px;
+/* Custom scrollbar classes - you might need to add these to your Tailwind config */
+.scrollbar-thin {
+  scrollbar-width: thin;
 }
 
-select[multiple]::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
+.scrollbar-thumb-gray-300::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded;
 }
 
-select[multiple]::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.scrollbar-track-gray-100::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
 }
 
-select[multiple]::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+.scrollbar-thin::-webkit-scrollbar {
+  @apply w-2;
 }
 
-/* Hover effects */
-.border-dashed:hover {
-  border-color: #3b82f6;
-  background-color: #f8faff;
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded;
 }
 
-/* Focus states */
-input:focus,
-select:focus {
-  outline: none;
-  ring: 2px;
-  ring-color: #3b82f6;
-  border-color: #3b82f6;
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-gray-100 rounded;
 }
 
-/* Card styling */
-.card {
-  transition: all 0.2s ease-in-out;
-}
-
-.card:hover {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
 }
 </style>

@@ -1,7 +1,6 @@
 <script>
 import { ref, computed } from 'vue';
 import { useToast } from 'vue-toastification';
-import axios from 'axios';
 import api from '@/api/api';
 // import { QuestionMarkCircleIcon } from '@heroicons/vue/24/outline';
 
@@ -81,7 +80,7 @@ export default {
           { value: '2024', label: '2024' },
         ]
       }
-      else if (jenis_data.value === '333'|| jenis_data.value === '1') {
+      else if (jenis_data.value === '333' || jenis_data.value === '1') {
         return [
           { value: '2020', label: '2020' },
           { value: '2021', label: '2021' },
@@ -142,10 +141,10 @@ export default {
         } else if (jenis_data.value === '368') {
           endpoint = '/jumlah-angkatan-bekerja';
         }
-          else if (jenis_data.value === '1') {
-            endpoint = '/pdrb'
-          }
-         else {
+        else if (jenis_data.value === '1') {
+          endpoint = '/pdrb'
+        }
+        else {
           endpoint = '/fetch_data';
         }
 

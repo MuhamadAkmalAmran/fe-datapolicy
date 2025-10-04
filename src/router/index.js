@@ -40,7 +40,7 @@ const routes = [
         name: "APIScraping",
         component: () => import("@/components/Pengumpulan Data/APIScraping.vue"),
       },
-            {
+      {
         path: "apbd",
         name: "ScrapeAPBD",
         component: () => import("@/components/Pengumpulan Data/ScrapeAPBD.vue"),
@@ -69,6 +69,11 @@ const routes = [
         path: "users",
         name: "UserManagement",
         component: () => import("@/components/UserManagement.vue"),
+      },
+      {
+        path: "master/kategori",
+        name: "Categories",
+        component: () => import("@/components/CategoriesPage.vue"),
       },
     ],
   },

@@ -40,164 +40,127 @@
               </div>
             </div>
 
-            <!-- Region Dropdown -->
-            <div class="relative" ref="regionDropdownRef">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah</label>
-              <div class="relative">
-                <input
-                  type="text"
-                  v-model="dropdowns.region.search"
-                  @focus="openDropdown('region')"
-                  placeholder="Pilih Wilayah"
-                  class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  v-if="dropdowns.region.search && form.selectedRegion"
-                  type="button"
-                  @click="clearSelection('region')"
-                  class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
+            <!-- Cities Multi-select -->
+            <div class="relative" ref="citiesDropdownRef">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah (Pilih satu atau lebih)</label>
+              
+              <!-- Selected cities display -->
+              <div class="min-h-10 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer" @click="openDropdown('cities')">
+                <div v-if="form.selectedCities.length > 0" class="flex flex-wrap gap-1">
+                  <span v-for="city in form.selectedCities" :key="city" 
+                        class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                    {{ city }}
+                    <button @click.stop="removeCitySelection(city)" class="ml-1 hover:text-blue-600">×</button>
+                  </span>
+                </div>
+                <div v-else class="text-gray-500 text-sm">Pilih Wilayah</div>
               </div>
 
-              <div
-                v-if="dropdowns.region.open"
-                class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10"
-              >
-                <div
-                  v-for="city in dropdowns.region.filtered"
-                  :key="city"
-                  @click="selectOption('region', city)"
-                  class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm"
-                  :class="{ 'bg-blue-50': form.selectedRegion === city }"
-                >
-                  {{ city }}
+              <div v-if="dropdowns.cities.open" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10">
+                <div class="p-2">
+                  <input v-model="dropdowns.cities.search" @input="updateCitiesFilter" 
+                         placeholder="Cari wilayah..." 
+                         class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
                 </div>
-                <div v-if="dropdowns.region.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+                <div v-for="city in dropdowns.cities.filtered" :key="city"
+                     @click="toggleCitySelection(city)"
+                     class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm flex items-center justify-between"
+                     :class="{ 'bg-blue-50': form.selectedCities.includes(city) }">
+                  <span>{{ city }}</span>
+                  <span v-if="form.selectedCities.includes(city)" class="text-blue-600">✓</span>
+                </div>
+                <div v-if="dropdowns.cities.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
                   Tidak ada wilayah ditemukan
                 </div>
               </div>
             </div>
 
-            <!-- Analysis Type Toggle -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Jenis Analisis</label>
-              <div class="grid grid-cols-2 gap-2 p-1 bg-gray-100 rounded-lg">
-                <button @click="form.analysisType = 'single'" :class="analysisToggleClass('single')">Single Variabel</button>
-                <button @click="form.analysisType = 'multi'" :class="analysisToggleClass('multi')">Multi Variabel</button>
+            <!-- Independent Variables Multi-select -->
+            <div class="relative" ref="independentDropdownRef">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Variabel Independen (X) - 
+                <span class="text-blue-600 font-medium">
+                  {{ form.selectedIndependentVars.length === 1 ? 'Single Variable' : 
+                     form.selectedIndependentVars.length > 1 ? 'Multi Variable' : 'Pilih Variabel' }}
+                </span>
+              </label>
+              
+              <!-- Selected variables display -->
+              <div class="min-h-10 border border-gray-300 rounded-lg p-2 bg-white cursor-pointer" @click="openDropdown('independent')">
+                <div v-if="form.selectedIndependentVars.length > 0" class="flex flex-wrap gap-1">
+                  <span v-for="varName in form.selectedIndependentVars" :key="varName" 
+                        class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800">
+                    {{ getCategoryDisplayName(varName) }}
+                    <button @click.stop="removeIndependentVar(varName)" class="ml-1 hover:text-green-600">×</button>
+                  </span>
+                </div>
+                <div v-else class="text-gray-500 text-sm">Pilih Variabel Independen</div>
+              </div>
+
+              <div v-if="dropdowns.independent.open" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10">
+                <div class="p-2">
+                  <input v-model="dropdowns.independent.search" @input="updateIndependentFilter" 
+                         placeholder="Cari variabel..." 
+                         class="w-full px-2 py-1 border border-gray-300 rounded text-sm">
+                </div>
+                <div v-for="category in dropdowns.independent.filtered" :key="category.id"
+                     @click="toggleIndependentVar(category.name)"
+                     class="px-3 py-2 cursor-pointer hover:bg-green-100 text-sm flex items-center justify-between"
+                     :class="{ 'bg-green-50': form.selectedIndependentVars.includes(category.name) }">
+                  <span>{{ category.display_name || category.name }}</span>
+                  <span v-if="form.selectedIndependentVars.includes(category.name)" class="text-green-600">✓</span>
+                </div>
+                <div v-if="dropdowns.independent.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+                  Tidak ada kategori ditemukan
+                </div>
               </div>
             </div>
 
-            <!-- Single Variable Analysis -->
-            <template v-if="form.analysisType === 'single'">
-              <div class="space-y-4">
-                <!-- Independent Variable -->
-                <div class="relative" ref="independentDropdownRef">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Variabel Independen (X)</label>
-                  <div class="relative">
-                    <input
-                      type="text"
-                      v-model="dropdowns.independent.search"
-                      @focus="openDropdown('independent')"
-                      placeholder="Pilih Variabel"
-                      class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      v-if="dropdowns.independent.search && form.selectedIndependentVar"
-                      type="button"
-                      @click="clearSelection('independent')"
-                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      ✕
-                    </button>
-                  </div>
+            <!-- Dependent Variable -->
+            <div class="relative" ref="dependentDropdownRef">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Variabel Dependen (Y)</label>
+              <div class="relative">
+                <input type="text" v-model="dropdowns.dependent.search" @focus="openDropdown('dependent')" 
+                       @input="updateDependentFilter"
+                       placeholder="Pilih Variabel" 
+                       class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500">
+                <button v-if="dropdowns.dependent.search && form.selectedDependentVar" type="button"
+                        @click="clearSelection('dependent')"
+                        class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+              </div>
 
-                  <div
-                    v-if="dropdowns.independent.open"
-                    class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10"
-                  >
-                    <div
-                      v-for="category in dropdowns.independent.filtered"
-                      :key="category.id"
-                      @click="selectCategory('independent', category)"
-                      class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm"
-                      :class="{ 'bg-blue-50': form.selectedIndependentVar === category.name }"
-                    >
-                      {{ category.display_name || category.name }}
-                    </div>
-                    <div v-if="dropdowns.independent.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
-                      Tidak ada kategori ditemukan
-                    </div>
-                  </div>
+              <div v-if="dropdowns.dependent.open" class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10">
+                <div v-for="category in dropdowns.dependent.filtered" :key="category.id"
+                     @click="selectCategory('dependent', category)"
+                     class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm"
+                     :class="{ 'bg-blue-50': form.selectedDependentVar === category.name }">
+                  {{ category.display_name || category.name }}
                 </div>
-
-                <!-- Dependent Variable -->
-                <div class="relative" ref="dependentDropdownRef">
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Variabel Dependen (Y)</label>
-                  <div class="relative">
-                    <input
-                      type="text"
-                      v-model="dropdowns.dependent.search"
-                      @focus="openDropdown('dependent')"
-                      placeholder="Pilih Variabel"
-                      class="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      v-if="dropdowns.dependent.search && form.selectedDependentVar"
-                      type="button"
-                      @click="clearSelection('dependent')"
-                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <div
-                    v-if="dropdowns.dependent.open"
-                    class="absolute w-full bg-white border border-gray-300 mt-1 max-h-40 overflow-y-auto rounded-md shadow-lg z-10"
-                  >
-                    <div
-                      v-for="category in dropdowns.dependent.filtered"
-                      :key="category.id"
-                      @click="selectCategory('dependent', category)"
-                      class="px-3 py-2 cursor-pointer hover:bg-blue-100 text-sm"
-                      :class="{ 'bg-blue-50': form.selectedDependentVar === category.name }"
-                    >
-                      {{ category.display_name || category.name }}
-                    </div>
-                    <div v-if="dropdowns.dependent.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
-                      Tidak ada kategori ditemukan
-                    </div>
-                  </div>
+                <div v-if="dropdowns.dependent.filtered.length === 0" class="px-3 py-2 text-gray-500 text-sm">
+                  Tidak ada kategori ditemukan
                 </div>
               </div>
-            </template>
+            </div>
 
-            <!-- Multi Variable Analysis -->
-            <template v-else>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Variabel (min. 2, terakhir adalah dependen)</label>
-                <div class="space-y-2 max-h-60 overflow-y-auto rounded-lg border border-gray-200 p-2">
-                  <label v-for="category in categories" :key="category.id" class="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-md cursor-pointer">
-                    <input
-                      type="checkbox"
-                      :value="category.name"
-                      v-model="form.selectedMultiVars"
-                      class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span class="text-sm text-gray-700">{{ category.display_name || category.name }}</span>
-                  </label>
-                </div>
+            <!-- Analysis Info -->
+            <div v-if="form.selectedIndependentVars.length > 0" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-blue-700 font-medium">
+                  Mode Analisis: {{ form.selectedIndependentVars.length === 1 ? 'Single Variable' : 'Multi Variable' }}
+                </span>
               </div>
-            </template>
+              <p class="text-blue-600 text-sm mt-1">
+                {{ form.selectedIndependentVars.length }} variabel independen dipilih
+              </p>
+            </div>
 
             <!-- Submit Button -->
-            <button
-              @click="performRegression"
-              :disabled="!canAnalyze"
-              :class="submitButtonClass"
-            >
+            <button @click="performRegression" :disabled="!canAnalyze" :class="submitButtonClass">
               Mulai Analisis
             </button>
 
@@ -214,7 +177,11 @@
             <div class="flex justify-between items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
               <div>
                 <h2 class="text-2xl font-bold text-gray-900">Hasil Analisis Regresi</h2>
-                <p class="text-sm text-gray-600 mt-1">{{ analysisResults.city }} - {{ analysisResults.regression_type === 'linear' ? 'Linear' : 'Non-Linear' }}</p>
+                <p class="text-sm text-gray-600 mt-1">
+                  {{ analysisResults.regions?.join(', ') || 'N/A' }} - 
+                  {{ analysisResults.regression_type === 'linear' ? 'Linear' : 'Non-Linear' }} - 
+                  {{ analysisResults.analysis_mode === 'multi_region' ? 'Multi Region' : 'Single Region' }}
+                </p>
               </div>
               <button @click="closeResults" class="text-gray-500 hover:text-gray-700 p-2">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,8 +264,32 @@
                 </div>
               </div>
 
-              <!-- Correlation Matrix for Multi-Variable -->
-              <div v-if="form.analysisType === 'multi' && analysisResults.details.correlations" class="bg-gray-50 border border-gray-200 rounded-xl p-6">
+              <!-- Region Statistics for Multi-Region -->
+              <div v-if="analysisResults.details.region_statistics" class="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                <div class="flex items-center mb-4">
+                  <div class="bg-gray-100 p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-xl font-bold text-gray-900">Statistik Per Wilayah</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div v-for="(stats, region) in analysisResults.details.region_statistics" :key="region" 
+                       class="bg-white rounded-lg p-4 border border-gray-200">
+                    <h4 class="font-semibold text-gray-900 mb-2">{{ region }}</h4>
+                    <div class="space-y-1 text-sm text-gray-600">
+                      <p><strong>Data Points:</strong> {{ stats.data_points }}</p>
+                      <div v-for="(varStats, varName) in stats.variable_means" :key="varName">
+                        <p><strong>{{ getCategoryDisplayName(varName) }}:</strong> {{ typeof varStats === 'number' ? varStats.toFixed(2) : varStats }}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Correlation Matrix -->
+              <div v-if="analysisResults.details.correlations" class="bg-gray-50 border border-gray-200 rounded-xl p-6">
                 <div class="flex items-center mb-4">
                   <div class="bg-gray-100 p-2 rounded-lg mr-3">
                     <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,7 +303,8 @@
                     <thead class="bg-gray-100">
                       <tr>
                         <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Variabel</th>
-                        <th v-for="variable in Object.keys(analysisResults.details.correlations)" :key="variable" class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
+                        <th v-for="variable in Object.keys(analysisResults.details.correlations)" :key="variable" 
+                            class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">
                           {{ getCategoryDisplayName(variable) }}
                         </th>
                       </tr>
@@ -320,7 +312,8 @@
                     <tbody class="divide-y divide-gray-200">
                       <tr v-for="(row, rowVar) in analysisResults.details.correlations" :key="rowVar" class="hover:bg-gray-50">
                         <td class="px-4 py-2 text-sm font-medium text-gray-900">{{ getCategoryDisplayName(rowVar) }}</td>
-                        <td v-for="(value, colVar) in row" :key="colVar" class="px-4 py-2 text-center text-sm" :class="getCorrelationColor(value)">
+                        <td v-for="(value, colVar) in row" :key="colVar" 
+                            class="px-4 py-2 text-center text-sm" :class="getCorrelationColor(value)">
                           {{ typeof value === 'number' ? value.toFixed(3) : 'N/A' }}
                         </td>
                       </tr>
@@ -340,28 +333,22 @@
                     </div>
                     <h3 class="text-xl font-bold text-gray-900">Visualisasi Data</h3>
                   </div>
-                  <!-- Legend for multi-variable -->
-                  <div v-if="form.analysisType === 'multi'" class="text-sm text-gray-600 space-x-4">
-                    <span><span class="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>Diagonal: Distribusi</span>
-                    <span><span class="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>Bawah: Scatter</span>
-                    <span><span class="inline-block w-3 h-3 bg-red-500 rounded mr-1"></span>Atas: Korelasi</span>
-                  </div>
                 </div>
 
                 <!-- Single Variable Charts -->
-                <template v-if="form.analysisType === 'single'">
+                <template v-if="analysisResults.analysis_type === 'single'">
                   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Scatter Plot with Regression Line -->
                     <div class="bg-white rounded-xl border border-gray-200 p-4">
-                      <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Hubungan Variabel & Garis Regresi</h4>
+                      <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Scatter Plot & Garis Regresi</h4>
                       <div class="h-80">
-                        <canvas id="varVarChart"></canvas>
+                        <canvas id="scatterChart"></canvas>
                       </div>
                     </div>
 
                     <!-- Time Series Chart -->
                     <div class="bg-white rounded-xl border border-gray-200 p-4">
-                      <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Perkembangan Waktu</h4>
+                      <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Tren Waktu</h4>
                       <div class="h-80">
                         <canvas id="timeSeriesChart"></canvas>
                       </div>
@@ -370,24 +357,24 @@
                 </template>
 
                 <!-- Multi Variable Charts -->
-                <template v-else>
+                <template v-else-if="analysisResults.analysis_type === 'multi'">
                   <!-- Time Series for All Variables -->
                   <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Perkembangan Semua Variabel</h4>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-3 text-center">Tren Waktu Semua Variabel</h4>
                     <div class="h-96">
-                      <canvas id="timeSeriesChart"></canvas>
+                      <canvas id="multiTimeSeriesChart"></canvas>
                     </div>
                   </div>
 
-                  <!-- ggpairs-style Matrix -->
+                  <!-- Scatter Plot Matrix -->
                   <div class="bg-white rounded-xl border border-gray-200 p-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center">Matrix Analisis Hubungan (ggpairs style)</h4>
-                    <div id="pairsMatrix" class="flex justify-center"></div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4 text-center">Matrix Scatter Plot</h4>
+                    <div id="scatterMatrix" class="flex justify-center"></div>
                     <div class="mt-4 text-sm text-gray-600 space-y-1">
                       <p><strong>Cara Membaca:</strong></p>
                       <p>• <strong>Diagonal:</strong> Histogram distribusi masing-masing variabel</p>
-                      <p>• <strong>Segitiga Bawah:</strong> Scatter plot hubungan antar variabel</p>
-                      <p>• <strong>Segitiga Atas:</strong> Koefisien korelasi Pearson (hijau = positif, merah = negatif)</p>
+                      <p>• <strong>Off-diagonal:</strong> Scatter plot hubungan antar variabel</p>
+                      <p>• Warna berbeda menunjukkan wilayah berbeda (untuk multi-region)</p>
                     </div>
                   </div>
                 </template>
@@ -407,7 +394,7 @@ import api from '@/api/api'
 
 Chart.register(...registerables)
 
-// Helper functions for ggpairs matrix
+// Helper functions for matrix visualization
 function pearsonCorrelation(x, y) {
   const n = Math.min(x.length, y.length);
   if (n < 2) return 0;
@@ -444,27 +431,6 @@ function createHistogram(values, bins = 10) {
   return { centers: binCenters, counts: binCounts };
 }
 
-// Custom Chart.js plugin for correlation text
-const correlationTextPlugin = {
-  id: 'correlationText',
-  afterDraw(chart, args, options) {
-    if (!options?.text) return;
-
-    const { ctx, chartArea } = chart;
-    const { left, top, right, bottom } = chartArea;
-
-    ctx.save();
-    ctx.fillStyle = options.color || '#374151';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = 'bold 18px system-ui, sans-serif';
-    ctx.fillText(options.text, (left + right) / 2, (top + bottom) / 2);
-    ctx.restore();
-  }
-};
-
-Chart.register(correlationTextPlugin);
-
 export default {
   name: 'RegressionAnalysis',
   setup() {
@@ -475,22 +441,20 @@ export default {
 
     // Form data
     const form = ref({
-      selectedRegion: '',
+      selectedCities: [],
       regressionType: 'linear',
-      analysisType: 'single',
-      selectedIndependentVar: '',
-      selectedDependentVar: '',
-      selectedMultiVars: []
+      selectedIndependentVars: [],
+      selectedDependentVar: ''
     })
 
     // Dropdown refs
-    const regionDropdownRef = ref(null)
+    const citiesDropdownRef = ref(null)
     const independentDropdownRef = ref(null)
     const dependentDropdownRef = ref(null)
 
     // Dropdowns state
     const dropdowns = ref({
-      region: {
+      cities: {
         open: false,
         search: '',
         filtered: []
@@ -510,7 +474,7 @@ export default {
     // Constants
     const cities = [
       "Kota Yogyakarta",
-      "Kulon Progo",
+      "Kulon Progo", 
       "Kota Bandung",
       "Kota Surabaya",
       "Banyuwangi"
@@ -518,27 +482,23 @@ export default {
 
     // Computed
     const availableDependentVars = computed(() => {
-      return categories.value.filter(cat => cat.name !== form.value.selectedIndependentVar)
+      return categories.value.filter(cat => !form.value.selectedIndependentVars.includes(cat.name))
+    })
+
+    const analysisType = computed(() => {
+      return form.value.selectedIndependentVars.length === 1 ? 'single' : 'multi'
     })
 
     const canAnalyze = computed(() => {
-      if (!form.value.selectedRegion || !form.value.regressionType) return false
-      if (form.value.analysisType === 'single') {
-        return form.value.selectedIndependentVar && form.value.selectedDependentVar
-      }
-      return form.value.selectedMultiVars.length >= 2
+      return form.value.selectedCities.length > 0 && 
+             form.value.selectedIndependentVars.length > 0 && 
+             form.value.selectedDependentVar &&
+             form.value.regressionType
     })
 
     const toggleButtonClass = computed(() => (type) => [
       'py-2 px-4 rounded-md text-sm font-medium transition-colors',
       form.value.regressionType === type
-        ? 'bg-white text-blue-600 shadow-sm'
-        : 'text-gray-600 hover:text-gray-900'
-    ])
-
-    const analysisToggleClass = computed(() => (type) => [
-      'py-2 px-4 rounded-md text-sm font-medium transition-colors',
-      form.value.analysisType === type
         ? 'bg-white text-blue-600 shadow-sm'
         : 'text-gray-600 hover:text-gray-900'
     ])
@@ -562,22 +522,29 @@ export default {
     }
 
     const updateDropdownFilters = () => {
-      // Region filter
-      const regionTerm = dropdowns.value.region.search.toLowerCase()
-      dropdowns.value.region.filtered = cities.filter(city =>
-        city.toLowerCase().includes(regionTerm)
-      )
+      updateCitiesFilter()
+      updateIndependentFilter()
+      updateDependentFilter()
+    }
 
-      // Independent variable filter
-      const indepTerm = dropdowns.value.independent.search.toLowerCase()
+    const updateCitiesFilter = () => {
+      const searchTerm = dropdowns.value.cities.search.toLowerCase()
+      dropdowns.value.cities.filtered = cities.filter(city =>
+        city.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    const updateIndependentFilter = () => {
+      const searchTerm = dropdowns.value.independent.search.toLowerCase()
       dropdowns.value.independent.filtered = categories.value.filter(cat =>
-        (cat.display_name || cat.name).toLowerCase().includes(indepTerm)
+        (cat.display_name || cat.name).toLowerCase().includes(searchTerm)
       )
+    }
 
-      // Dependent variable filter
-      const depTerm = dropdowns.value.dependent.search.toLowerCase()
+    const updateDependentFilter = () => {
+      const searchTerm = dropdowns.value.dependent.search.toLowerCase()
       dropdowns.value.dependent.filtered = availableDependentVars.value.filter(cat =>
-        (cat.display_name || cat.name).toLowerCase().includes(depTerm)
+        (cat.display_name || cat.name).toLowerCase().includes(searchTerm)
       )
     }
 
@@ -590,19 +557,40 @@ export default {
       dropdowns.value[type].open = false
     }
 
-    const selectOption = (type, value) => {
-      if (type === 'region') {
-        form.value.selectedRegion = value
-        dropdowns.value.region.search = value
+    const toggleCitySelection = (city) => {
+      const index = form.value.selectedCities.indexOf(city)
+      if (index > -1) {
+        form.value.selectedCities.splice(index, 1)
+      } else {
+        form.value.selectedCities.push(city)
       }
-      closeDropdown(type)
+    }
+
+    const removeCitySelection = (city) => {
+      const index = form.value.selectedCities.indexOf(city)
+      if (index > -1) {
+        form.value.selectedCities.splice(index, 1)
+      }
+    }
+
+    const toggleIndependentVar = (varName) => {
+      const index = form.value.selectedIndependentVars.indexOf(varName)
+      if (index > -1) {
+        form.value.selectedIndependentVars.splice(index, 1)
+      } else {
+        form.value.selectedIndependentVars.push(varName)
+      }
+    }
+
+    const removeIndependentVar = (varName) => {
+      const index = form.value.selectedIndependentVars.indexOf(varName)
+      if (index > -1) {
+        form.value.selectedIndependentVars.splice(index, 1)
+      }
     }
 
     const selectCategory = (type, category) => {
-      if (type === 'independent') {
-        form.value.selectedIndependentVar = category.name
-        dropdowns.value.independent.search = category.display_name || category.name
-      } else if (type === 'dependent') {
+      if (type === 'dependent') {
         form.value.selectedDependentVar = category.name
         dropdowns.value.dependent.search = category.display_name || category.name
       }
@@ -610,13 +598,7 @@ export default {
     }
 
     const clearSelection = (type) => {
-      if (type === 'region') {
-        form.value.selectedRegion = ''
-        dropdowns.value.region.search = ''
-      } else if (type === 'independent') {
-        form.value.selectedIndependentVar = ''
-        dropdowns.value.independent.search = ''
-      } else if (type === 'dependent') {
+      if (type === 'dependent') {
         form.value.selectedDependentVar = ''
         dropdowns.value.dependent.search = ''
       }
@@ -624,8 +606,8 @@ export default {
     }
 
     const handleClickOutside = (event) => {
-      const dropdownRefs = [regionDropdownRef, independentDropdownRef, dependentDropdownRef]
-      const dropdownTypes = ['region', 'independent', 'dependent']
+      const dropdownRefs = [citiesDropdownRef, independentDropdownRef, dependentDropdownRef]
+      const dropdownTypes = ['cities', 'independent', 'dependent']
 
       dropdownRefs.forEach((ref, index) => {
         if (ref.value && !ref.value.contains(event.target)) {
@@ -636,28 +618,35 @@ export default {
 
     const performRegression = async () => {
       isLoading.value = true
-      destroyCharts()
       analysisResults.value = null
 
       try {
-        const payload = {
-          city: form.value.selectedRegion,
+        const currentAnalysisType = analysisType.value
+
+        let payload = {
+          cities: form.value.selectedCities,
           regression_type: form.value.regressionType,
-          analysis_type: form.value.analysisType,
+          analysis_type: currentAnalysisType
         }
 
-        if (form.value.analysisType === "single") {
-          payload.independent_variable = form.value.selectedIndependentVar
+        // Different payload structure based on analysis type
+        if (currentAnalysisType === 'single') {
+          // For single variable analysis, API expects separate fields
+          payload.independent_variable = form.value.selectedIndependentVars[0]
           payload.dependent_variable = form.value.selectedDependentVar
         } else {
-          payload.variables = form.value.selectedMultiVars
+          // For multi variable analysis, API expects variables array
+          payload.variables = [...form.value.selectedIndependentVars, form.value.selectedDependentVar]
         }
+
+        console.log('Sending payload:', payload)
 
         const response = await api.post("/analysis", payload)
         analysisResults.value = response.data
 
         await nextTick()
         renderCharts()
+
       } catch (error) {
         console.error("Regression analysis error:", error)
         const errorMessage = error.response?.data?.error || "Terjadi kesalahan saat melakukan analisis."
@@ -672,10 +661,6 @@ export default {
       destroyCharts()
     }
 
-    const formatPercent = (value) => {
-      return (value * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'
-    }
-
     const destroyCharts = () => {
       Object.values(chartInstances.value).forEach(chart => {
         if (chart && typeof chart.destroy === 'function') {
@@ -685,28 +670,10 @@ export default {
       chartInstances.value = {}
 
       // Clear matrix container
-      const container = document.getElementById('pairsMatrix')
+      const container = document.getElementById('scatterMatrix')
       if (container) {
         container.innerHTML = ''
       }
-    }
-
-    const getCategoryDisplayName = (categoryName) => {
-      if (analysisResults.value?.category_names?.[categoryName]) {
-        return analysisResults.value.category_names[categoryName]
-      }
-      const category = categories.value.find(cat => cat.name === categoryName)
-      return category ? (category.display_name || category.name) : categoryName
-    }
-
-    const getCorrelationColor = (value) => {
-      if (typeof value !== 'number') return 'text-gray-500'
-      const absValue = Math.abs(value)
-      if (absValue >= 0.8) return 'text-red-600 font-bold bg-red-50'
-      if (absValue >= 0.6) return 'text-orange-600 font-semibold bg-orange-50'
-      if (absValue >= 0.4) return 'text-yellow-600 font-medium bg-yellow-50'
-      if (absValue >= 0.2) return 'text-blue-600 bg-blue-50'
-      return 'text-gray-600 bg-gray-50'
     }
 
     const renderCharts = () => {
@@ -715,9 +682,11 @@ export default {
         return
       }
 
-      if (form.value.analysisType === "single") {
+      destroyCharts() // Clean up existing charts
+
+      if (analysisResults.value.analysis_type === "single") {
         renderSingleVariableCharts()
-      } else {
+      } else if (analysisResults.value.analysis_type === "multi") {
         renderMultiVariableCharts()
       }
     }
@@ -733,34 +702,39 @@ export default {
       }
 
       const independentData = data.independent_values[independentVarName]
+      const colors = ["#3B82F6", "#EF4444", "#10B981", "#F59E0B", "#8B5CF6"]
 
-      // Enhanced Scatter Plot with Regression Line
-      const varVarCtx = document.getElementById("varVarChart")
-      if (varVarCtx) {
-        chartInstances.value.varVar = new Chart(varVarCtx, {
+      // Scatter Plot with Regression Line
+      const scatterCtx = document.getElementById("scatterChart")
+      if (scatterCtx) {
+        const scatterData = independentData.map((x, i) => ({ x, y: data.dependent_values[i] }))
+        
+        const datasets = [{
+          label: "Data Aktual",
+          data: scatterData,
+          backgroundColor: "rgba(59, 130, 246, 0.6)",
+          borderColor: "rgba(59, 130, 246, 0.8)",
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        }]
+
+        // Add regression line if fitted values exist
+        if (data.fitted_values) {
+          datasets.push({
+            label: "Garis Regresi",
+            data: independentData.map((x, i) => ({ x, y: data.fitted_values[i] })),
+            type: "line",
+            borderColor: "rgba(239, 68, 68, 0.8)",
+            backgroundColor: "transparent",
+            pointRadius: 0,
+            borderWidth: 3,
+            tension: analysisResults.value.regression_type === "non_linear" ? 0.4 : 0,
+          })
+        }
+
+        chartInstances.value.scatter = new Chart(scatterCtx, {
           type: "scatter",
-          data: {
-            datasets: [
-              {
-                label: "Data Aktual",
-                data: independentData.map((x, i) => ({ x, y: data.dependent_values[i] })),
-                backgroundColor: "rgba(59, 130, 246, 0.6)",
-                borderColor: "rgba(59, 130, 246, 0.8)",
-                pointRadius: 6,
-                pointHoverRadius: 8,
-              },
-              {
-                label: "Garis Regresi",
-                data: independentData.map((x, i) => ({ x, y: data.fitted_values[i] })),
-                type: "line",
-                borderColor: "rgba(239, 68, 68, 0.8)",
-                backgroundColor: "transparent",
-                pointRadius: 0,
-                borderWidth: 3,
-                tension: form.value.regressionType === "non_linear" ? 0.4 : 0,
-              },
-            ],
-          },
+          data: { datasets },
           options: {
             responsive: true,
             maintainAspectRatio: false,
@@ -795,9 +769,9 @@ export default {
         })
       }
 
-      // Enhanced Time Series Chart
+      // Time Series Chart
       const timeSeriesCtx = document.getElementById("timeSeriesChart")
-      if (timeSeriesCtx) {
+      if (timeSeriesCtx && data.years) {
         chartInstances.value.timeSeries = new Chart(timeSeriesCtx, {
           type: "line",
           data: {
@@ -904,9 +878,9 @@ export default {
         "rgba(20, 184, 166, 0.8)",  // teal
       ]
 
-      // Enhanced Time Series Chart for all variables
-      const timeSeriesCtx = document.getElementById("timeSeriesChart")
-      if (timeSeriesCtx) {
+      // Time Series Chart for all variables
+      const timeSeriesCtx = document.getElementById("multiTimeSeriesChart")
+      if (timeSeriesCtx && data.years) {
         const timeSeriesDatasets = Object.entries(allValues).map(([varName, values], index) => ({
           label: getCategoryDisplayName(varName),
           data: values,
@@ -951,7 +925,7 @@ export default {
               y: {
                 title: {
                   display: true,
-                  text: "Nilai (Standardized)",
+                  text: "Nilai",
                   font: { size: 12, weight: 'bold' }
                 }
               },
@@ -960,16 +934,16 @@ export default {
         })
       }
 
-      // Create ggpairs-style matrix
-      renderGGPairsMatrix(Object.keys(allValues), allValues)
+      // Create scatter plot matrix
+      renderScatterMatrix(Object.keys(allValues), allValues, data)
     }
 
-    const renderGGPairsMatrix = (selectedVars, variables) => {
-      const container = document.getElementById('pairsMatrix')
+    const renderScatterMatrix = (selectedVars, variables, data) => {
+      const container = document.getElementById('scatterMatrix')
       if (!container) return
 
       const n = selectedVars.length
-      const cellSize = Math.max(150, Math.min(220, 1000 / n)) // Adaptive cell size
+      const cellSize = Math.max(150, Math.min(220, 1000 / n))
 
       // Create grid container
       const grid = document.createElement('div')
@@ -986,6 +960,10 @@ export default {
         "rgba(139, 92, 246, 0.8)",  // violet
       ]
 
+      // Generate different colors for different regions if multi-region
+      const isMultiRegion = analysisResults.value.analysis_mode === 'multi_region'
+      const regions = isMultiRegion ? (data.region || []) : []
+
       for (let row = 0; row < n; row++) {
         for (let col = 0; col < n; col++) {
           const cell = document.createElement('div')
@@ -993,7 +971,6 @@ export default {
           cell.style.width = `${cellSize}px`
           cell.style.height = `${cellSize}px`
 
-          // Add variable labels
           const label = document.createElement('div')
           label.className = 'absolute top-1 left-1 text-xs text-gray-600 font-medium z-10 bg-white bg-opacity-80 px-1 rounded'
           label.style.fontSize = `${Math.max(8, cellSize / 25)}px`
@@ -1071,8 +1048,8 @@ export default {
             })
             chartInstances.value[`matrix_${row}_${col}`] = histChart
 
-          } else if (row > col) {
-            // Lower triangle: scatter plot
+          } else {
+            // Off-diagonal: scatter plot
             const scatterData = colData.map((x, i) => ({ x, y: rowData[i] }))
             const scatterChart = new Chart(canvas, {
               type: 'scatter',
@@ -1133,75 +1110,6 @@ export default {
               }
             })
             chartInstances.value[`matrix_${row}_${col}`] = scatterChart
-
-          } else {
-            // Upper triangle: correlation coefficient
-            const correlation = pearsonCorrelation(colData, rowData)
-
-            // Create a minimal scatter for background grid
-            const minX = Math.min(...colData)
-            const maxX = Math.max(...colData)
-            const minY = Math.min(...rowData)
-            const maxY = Math.max(...rowData)
-
-            const corrChart = new Chart(canvas, {
-              type: 'scatter',
-              data: {
-                datasets: [{
-                  data: [
-                    { x: minX, y: minY },
-                    { x: maxX, y: maxY }
-                  ],
-                  pointRadius: 0,
-                  showLine: false
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  x: {
-                    display: true,
-                    grid: { display: true, color: 'rgba(0,0,0,0.05)' },
-                    ticks: {
-                      font: { size: Math.max(8, cellSize / 35) },
-                      maxTicksLimit: 3,
-                      color: '#9ca3af',
-                      callback: function(value) {
-                        return value.toFixed(0)
-                      }
-                    }
-                  },
-                  y: {
-                    display: true,
-                    grid: { display: true, color: 'rgba(0,0,0,0.05)' },
-                    ticks: {
-                      font: { size: Math.max(8, cellSize / 35) },
-                      maxTicksLimit: 3,
-                      color: '#9ca3af',
-                      callback: function(value) {
-                        return value.toFixed(0)
-                      }
-                    }
-                  }
-                },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: {
-                    enabled: true,
-                    callbacks: {
-                      title: () => `Korelasi: ${getCategoryDisplayName(colVar)} vs ${getCategoryDisplayName(rowVar)}`,
-                      label: () => `r = ${correlation.toFixed(3)} (${Math.abs(correlation) > 0.7 ? 'Kuat' : Math.abs(correlation) > 0.5 ? 'Sedang' : 'Lemah'})`
-                    }
-                  },
-                  correlationText: {
-                    text: `r = ${correlation.toFixed(3)}`,
-                    color: correlation > 0 ? '#16a34a' : '#dc2626'
-                  }
-                }
-              }
-            })
-            chartInstances.value[`matrix_${row}_${col}`] = corrChart
           }
 
           grid.appendChild(cell)
@@ -1211,22 +1119,41 @@ export default {
       container.appendChild(grid)
     }
 
-    // Watchers
-    watch([() => form.value.analysisType, () => form.value.regressionType], () => {
-      form.value.selectedIndependentVar = ''
-      form.value.selectedDependentVar = ''
-      form.value.selectedMultiVars = []
-      analysisResults.value = null
-      destroyCharts()
+    const formatPercent = (value) => {
+      return (value * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'
+    }
 
-      // Clear dropdown searches
-      dropdowns.value.independent.search = ''
-      dropdowns.value.dependent.search = ''
+    const getCategoryDisplayName = (categoryName) => {
+      if (analysisResults.value?.category_names?.[categoryName]) {
+        return analysisResults.value.category_names[categoryName]
+      }
+      const category = categories.value.find(cat => cat.name === categoryName)
+      return category ? (category.display_name || category.name) : categoryName
+    }
+
+    const getCorrelationColor = (value) => {
+      if (typeof value !== 'number') return 'text-gray-500'
+      const absValue = Math.abs(value)
+      if (absValue >= 0.8) return 'text-red-600 font-bold bg-red-50'
+      if (absValue >= 0.6) return 'text-orange-600 font-semibold bg-orange-50'
+      if (absValue >= 0.4) return 'text-yellow-600 font-medium bg-yellow-50'
+      if (absValue >= 0.2) return 'text-blue-600 bg-blue-50'
+      return 'text-gray-600 bg-gray-50'
+    }
+
+    // Watchers
+    watch([() => form.value.regressionType], () => {
+      analysisResults.value = null
     })
 
-    watch(() => dropdowns.value.region.search, updateDropdownFilters)
-    watch(() => dropdowns.value.independent.search, updateDropdownFilters)
-    watch(() => dropdowns.value.dependent.search, updateDropdownFilters)
+    watch(() => form.value.selectedIndependentVars, () => {
+      // Clear dependent variable if it's now selected as independent
+      if (form.value.selectedIndependentVars.includes(form.value.selectedDependentVar)) {
+        form.value.selectedDependentVar = ''
+        dropdowns.value.dependent.search = ''
+      }
+      updateDependentFilter()
+    }, { deep: true })
 
     // Lifecycle
     onMounted(() => {
@@ -1246,18 +1173,23 @@ export default {
       form,
       dropdowns,
       categories,
-      regionDropdownRef,
+      citiesDropdownRef,
       independentDropdownRef,
       dependentDropdownRef,
+      analysisType,
       canAnalyze,
       toggleButtonClass,
-      analysisToggleClass,
       submitButtonClass,
       openDropdown,
       closeDropdown,
-      selectOption,
+      toggleCitySelection,
+      removeCitySelection,
+      toggleIndependentVar,
+      removeIndependentVar,
       selectCategory,
       clearSelection,
+      updateCitiesFilter,
+      updateIndependentFilter,
       performRegression,
       closeResults,
       formatPercent,

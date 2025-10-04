@@ -105,7 +105,6 @@
 <script>
 import AddButton from '../Button/AddButton.vue';
 import { ref, onMounted } from 'vue';
-import axios from 'axios';
 import { useToast } from 'vue-toastification';
 import api from '@/api/api';
 

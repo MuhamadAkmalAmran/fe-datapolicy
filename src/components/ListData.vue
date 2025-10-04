@@ -6,6 +6,8 @@
     </div>
 
     <div class="bg-white rounded">
+      <h1 class="text-2xl font-semibold mb-6">List Data</h1>
+
       <!-- Filters -->
       <div class="grid gap-6 grid-cols-1 sm:grid-cols-2 mb-6">
         <!-- Kategori dengan Search -->
@@ -43,7 +45,7 @@
 
         <!-- Wilayah -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Wilayah</label>
+          <label class="block text-sm font-medium text-gray-700 pb-1">Wilayah</label>
           <select v-model="filters.selectedCity"
             class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Semua Wilayah</option>
